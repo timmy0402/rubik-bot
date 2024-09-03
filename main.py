@@ -3,6 +3,7 @@ from discord.ext import commands
 import os
 from dotenv import load_dotenv
 from pyTwistyScrambler import scrambler333, scrambler444
+import timer
 
 load_dotenv()
 
@@ -36,6 +37,10 @@ async def button(ctx):
     button = discord.ui.Button(label="click me")
     view.add_item(button)
     await ctx.send(view=view)
+
+@bot.command()
+async def stopwatch(ctx):
+    await ctx.send("Use the buttons to control the stopwatch!", view=timer.TimerView())
 
 @bot.command()
 async def sync(ctx):
