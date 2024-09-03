@@ -1,0 +1,5 @@
+- name: scramble
+  description: Scramble
+  arguments:
+    - name: arg
+      type: string
