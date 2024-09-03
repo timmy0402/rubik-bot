@@ -37,5 +37,14 @@ async def button(ctx):
     view.add_item(button)
     await ctx.send(view=view)
 
+@bot.command()
+async def sync(ctx):
+    print("sync command")
+    if ctx.author.id == (os.getenv('AUTHOR_ID')):
+        await bot.tree.sync()
+        await ctx.send('Command tree synced.')
+    else:
+        await ctx.send('You must be the owner to use this command!')
+
 
 bot.run(os.getenv('TOKEN'))
