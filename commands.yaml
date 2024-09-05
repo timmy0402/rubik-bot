@@ -9,4 +9,8 @@
             value: "3x3"
           - name: "4x4"
             value: "4x4"
-  # Add other commands below
+  
+  - name: stopwatch
+    description: Time your own solve with timer
+    enabled: true
+    timeout: 90  # Timeout in seconds
