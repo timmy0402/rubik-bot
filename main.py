@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord import app_commands
 import os
 from dotenv import load_dotenv
 from pyTwistyScrambler import scrambler333, scrambler444
@@ -15,6 +16,8 @@ bot = commands.Bot(command_prefix='/', intents=intents)
 @bot.event
 async def on_ready():
     print(f'We have logged as an {bot.user}')
+    await bot.tree.sync()
+
 
 @bot.event
 async def on_message(message):
@@ -24,12 +27,19 @@ async def on_message(message):
         await message.channel.send('Hello!')
     await bot.process_commands(message)
 
-@bot.command()
-async def scramble(ctx, arg):
+@bot.tree.command(name="scramble", description="Scramble")
+@app_commands.describe(arg="Choose the scramble type")
+@app_commands.choices(arg=[
+    app_commands.Choice(name="3x3", value="3x3"),
+    app_commands.Choice(name="4x4", value="4x4")
+])
+async def scramble(ctx, arg: str):
     if(arg == '3x3'):
-        await ctx.send(scrambler333.get_WCA_scramble())
+        await ctx.response.send_message(scrambler333.get_WCA_scramble())
     elif(arg == '4x4'):
-        await ctx.send(scrambler444.get_WCA_scramble())
+        await ctx.response.defer()
+        scramble_text = scrambler444.get_WCA_scramble()
+        await ctx.followup.send(scramble_text)
 
 @bot.command()
 async def button(ctx):
@@ -40,16 +50,25 @@ async def button(ctx):
 
 @bot.command()
 async def stopwatch(ctx):
-    await ctx.send("Use the buttons to control the stopwatch!", view=timer.TimerView())
-
-@bot.command()
-async def sync(ctx):
-    print("sync command")
-    if ctx.author.id == (os.getenv('AUTHOR_ID')):
-        await bot.tree.sync()
-        await ctx.send('Command tree synced.')
+    view=timer.TimerView(timeout=50)
+    message = await ctx.send(view=view)
+    view.message = message
+        
+    await view.wait()
+    await view.disable_all_items()
+        
+    if view.foo is None:
+        #logger.error("Timeout")
+        print("timeout")
+            
+    elif view.foo is True:
+        #logger.error("Ok")
+        print("ok")
+            
     else:
-        await ctx.send('You must be the owner to use this command!')
+        #logger.error("cancel")
+        print("cancel")
+
 
 
 bot.run(os.getenv('TOKEN'))

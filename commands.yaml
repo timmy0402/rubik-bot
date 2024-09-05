@@ -1,5 +1,12 @@
-- name: scramble
-  description: Scramble
-  arguments:
-    - name: arg
-      type: string
+  - name: scramble
+    description: Scramble
+    arguments:
+      - name: arg
+        type: string
+        required: true
+        choices:
+          - name: "3x3"
+            value: "3x3"
+          - name: "4x4"
+            value: "4x4"
+  # Add other commands below
