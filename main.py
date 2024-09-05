@@ -40,6 +40,7 @@ async def scramble(ctx, arg: str):
         await ctx.response.defer()
         scramble_text = scrambler444.get_WCA_scramble()
         await ctx.followup.send(scramble_text)
+    
 
 @bot.command()
 async def button(ctx):
@@ -50,25 +51,12 @@ async def button(ctx):
 
 @bot.command()
 async def stopwatch(ctx):
-    view=timer.TimerView(timeout=50)
+    view=timer.TimerView(timeout=90)
     message = await ctx.send(view=view)
     view.message = message
-        
+    
     await view.wait()
     await view.disable_all_items()
-        
-    if view.foo is None:
-        #logger.error("Timeout")
-        print("timeout")
-            
-    elif view.foo is True:
-        #logger.error("Ok")
-        print("ok")
-            
-    else:
-        #logger.error("cancel")
-        print("cancel")
-
 
 
 bot.run(os.getenv('TOKEN'))

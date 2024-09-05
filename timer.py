@@ -15,15 +15,26 @@ class TimerView(discord.ui.View):
         await self.message.channel.send("Timedout")
         await self.disable_all_items()
 
-    @discord.ui.button(label="Start", style=discord.ButtonStyle.success)
-    async def startTime(self,interaction : discord.Interaction, button: discord.ui.Button):
-        await interaction.response.send_message("hello")
+    @discord.ui.button(label="Start", 
+                       style=discord.ButtonStyle.success)
+    async def startTimer(self,interaction : discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Time started!")
+        self.foo = True
+        self.startTime = time.time()
+    
+    @discord.ui.button(label="Stop",
+                       style=discord.ButtonStyle.secondary)
+    async def stopTime(self,interaction : discord.Interaction, button:discord.ui.Button):
+        self.endTime = time.time()
+        elapsedTime = self.endTime - self.startTime
+        elapsedTime = round(elapsedTime,2)
+        await interaction.response.send_message("Your time is: " + str(elapsedTime))
         self.foo = True
         self.stop()
     
-        @discord.ui.button(label="Cancel", 
+    @discord.ui.button(label="Cancel", 
                        style=discord.ButtonStyle.red)
-        async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-            await interaction.response.send_message("Cancelling")
-            self.foo = False
-            self.stop()
+    async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
+        await interaction.response.send_message("Cancelling")
+        self.foo = False
+        self.stop()
