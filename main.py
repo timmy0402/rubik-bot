@@ -51,7 +51,7 @@ async def button(ctx):
 
 @bot.command()
 async def stopwatch(ctx):
-    view=timer.TimerView(timeout=90)
+    view = timer.TimerView(timeout=90)
     message = await ctx.send(view=view)
     view.message = message
     
