@@ -17,38 +17,28 @@ class Cube():
     def __createFace(self,color):
         return [[color for _ in range(self.size)] for _ in range(self.size)]
     
-    def scrambleCube(self, scrambleLine : str):
-        commandList = scrambleLine.split()
-        for command in commandList:
-            match command:
-                case "U":
-                    self.__rotate_face("U", clockwise=True)
-                case "U'":
-                    self.__rotate_face("U", clockwise=False)
-                case "U2":
-                    self.__rotate_face("U", clockwise=True)
-                    self.__rotate_face("U", clockwise=True)
-                case "D":
-                    self.__rotate_face("D", clockwise=True)
-                case "D'":
-                    self.__rotate_face("D", clockwise=False)
-                case "D2":
-                    self.__rotate_face("D", clockwise=True)
-                    self.__rotate_face("D", clockwise=True)
-                case "R":
-                    self.__rotate_face("R",clockwise=True)
-                case "R'":
-                    self.__rotate_face("R",clockwise=False)
-                case "R2":
-                    self.__rotate_face("R",clockwise=True)
-                    self.__rotate_face("R",clockwise=True)
-                case "L":
-                    self.__rotate_face("L",clockwise=True)
-                case "L'":
-                    self.__rotate_face("L",clockwise=False)
-                case "L2":
-                    self.__rotate_face("L",clockwise=True)
-                    self.__rotate_face("L",clockwise=True)
+    def scrambleCube(self, scrambleLine: str):
+    commandList = scrambleLine.split()
+
+    for command in commandList:
+        # Get the face from the command (first character)
+        face = command[0]
+        
+        # Determine the number of rotations
+        if len(command) == 1:  # If it's just "U", "D", "R", etc.
+            rotations = 1
+            clockwise = True
+        elif command[1] == "'":  # If it's "U'", "D'", etc.
+            rotations = 1
+            clockwise = False
+        elif command[1] == "2":  # If it's "U2", "D2", etc.
+            rotations = 2
+            clockwise = True
+
+        # Rotate the face the appropriate number of times
+        for _ in range(rotations):
+            self.__rotate_face(face, clockwise)
+
 
     def __rotate_face(self, face, clockwise=True):
         if face == "U":
@@ -133,6 +123,25 @@ class Cube():
                     self.faces['red'][2-i][0] = self.faces['yellow'][0][i]
                     self.faces['yellow'][0][i] = self.faces['orange'][i][2]
                     self.faces['orange'][i][2] = temp[2-i]
+        if face == "B":
+            if clockwise:
+                # Temporary storage for the bottom row of the U (Upper) face
+                temp = self.faces['white'][0][:]
+
+                for i in range(3):
+                    self.faces['white'][0][i] = self.faces['red'][i][2]
+                    self.faces['red'][i][2] = self.faces['yellow'][2][2-i]
+                    self.faces['yellow'][2][i] = self.faces['orange'][i][0]
+                    self.faces['orange'][i][0] = temp[2-i]
+            else:
+                # Temporary storage for the bottom row of the U (Upper) face
+                temp = self.faces['white'][0][:]
+
+                for i in range(3):
+                    self.faces['white'][0][i] = self.faces['orange'][2-i][0]
+                    self.faces['orange'][i][0] = self.faces['yellow'][2][i]
+                    self.faces['yellow'][2][i] = self.faces['red'][2-i][2]
+                    self.faces['red'][2][i] = temp[i]
 
     # Function to draw the Rubik's cube image
     def draw_rubiks_cube(self):
