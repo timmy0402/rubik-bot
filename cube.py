@@ -17,9 +17,55 @@ class Cube():
     def __createFace(self,color):
         return [[color for _ in range(self.size)] for _ in range(self.size)]
     
-    def scrambleCube(scrambleLine : str):
+    def scrambleCube(self, scrambleLine : str):
         commandList = scrambleLine.split()
-        
+        for command in commandList:
+            match command:
+                case "U":
+                    self.__rotate_face("U", clockwise=True)
+                case "U'":
+                    self.__rotate_face("U", clockwise=False)
+                case "U2":
+                    self.__rotate_face("U", clockwise=True)
+                    self.__rotate_face("U", clockwise=True)
+                case "D":
+                    self.__rotate_face("D", clockwise=True)
+                case "D'":
+                    self.__rotate_face("D", clockwise=False)
+                case "D2":
+                    self.__rotate_face("D", clockwise=True)
+                    self.__rotate_face("D", clockwise=True)
+
+    def __rotate_face(self, face, clockwise=True):
+        if face == "U":
+            if clockwise:
+                temp = self.faces['red'][0]
+                self.faces['red'][0] = self.faces['blue'][0]
+                self.faces['blue'][0] = self.faces['orange'][0]
+                self.faces['orange'][0] = self.faces['green'][0]
+                self.faces['green'][0] = temp
+            else:
+                temp = self.faces['green'][0]
+                self.faces['green'][0] = self.faces['orange'][0]
+                self.faces['orange'][0] = self.faces['blue'][0]
+                self.faces['blue'][0] = self.faces['red'][0]
+                self.faces['red'][0] = temp
+        if face == "D":
+            if clockwise:
+                temp = self.faces['green'][2]
+                self.faces['green'][2] = self.faces['orange'][2]
+                self.faces['orange'][2] = self.faces['blue'][2]
+                self.faces['blue'][2] = self.faces['red'][2]
+                self.faces['red'][2] = temp
+            else:
+                temp = self.faces['red'][2]
+                self.faces['red'][2] = self.faces['blue'][2]
+                self.faces['blue'][2] = self.faces['orange'][2]
+                self.faces['orange'][2] = self.faces['green'][2]
+                self.faces['green'][2] = temp
+            return 0
+        return 0
+
     # Function to draw the Rubik's cube image
     def draw_rubiks_cube(self):
         # Color map for visualization
@@ -50,9 +96,9 @@ class Cube():
         layout_positions = {
             'white': (block_size * 6, 0),               # Top (above green)
             'blue': (0, block_size * 3),                # Left of green
-            'red': (block_size * 3, block_size * 3),    # Center (left of green)
+            'red': (block_size * 9, block_size * 3),    # Center (left of green)
             'green': (block_size * 6, block_size * 3),  # Center (main face)
-            'orange': (block_size * 9, block_size * 3), # Right of green
+            'orange': (block_size * 3, block_size * 3), # Right of green
             'yellow': (block_size * 6, block_size * 6)  # Bottom (below green)
         }
 
@@ -78,6 +124,7 @@ class Cube():
 # Create a 3x3 Rubik's Cube
 rubik_cube = Cube(size=3)
 
+rubik_cube.scrambleCube("D D' D' D2")
 # Draw the cube's image
 rubik_cube.draw_rubiks_cube()
 
