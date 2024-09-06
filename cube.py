@@ -114,7 +114,25 @@ class Cube():
                     self.faces['yellow'][i][0] = self.faces['blue'][2-i][2]
                     self.faces['blue'][2-i][2] = self.faces['white'][i][0]
                     self.faces['white'][i][0] = temp[i]
+        if face == "F":
+            if clockwise:
+                # Temporary storage for the bottom row of the U (Upper) face
+                temp = self.faces['white'][2][:]
 
+                for i in range(3):
+                    self.faces['white'][2][i] = self.faces['orange'][2 - i][2]
+                    self.faces['orange'][2 - i][2] = self.faces['yellow'][0][i]
+                    self.faces['yellow'][0][i] = self.faces['red'][2-i][0]
+                    self.faces['red'][i][0] = temp[i]
+            else:
+                # Temporary storage for the bottom row of the U (Upper) face
+                temp = self.faces['white'][2][:]
+
+                for i in range(3):
+                    self.faces['white'][2][i] = self.faces['red'][i][0]
+                    self.faces['red'][2-i][0] = self.faces['yellow'][0][i]
+                    self.faces['yellow'][0][i] = self.faces['orange'][i][2]
+                    self.faces['orange'][i][2] = temp[2-i]
 
     # Function to draw the Rubik's cube image
     def draw_rubiks_cube(self):
