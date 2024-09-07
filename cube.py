@@ -18,26 +18,26 @@ class Cube():
         return [[color for _ in range(self.size)] for _ in range(self.size)]
     
     def scrambleCube(self, scrambleLine: str):
-    commandList = scrambleLine.split()
+        commandList = scrambleLine.split()
 
-    for command in commandList:
-        # Get the face from the command (first character)
-        face = command[0]
-        
-        # Determine the number of rotations
-        if len(command) == 1:  # If it's just "U", "D", "R", etc.
-            rotations = 1
-            clockwise = True
-        elif command[1] == "'":  # If it's "U'", "D'", etc.
-            rotations = 1
-            clockwise = False
-        elif command[1] == "2":  # If it's "U2", "D2", etc.
-            rotations = 2
-            clockwise = True
+        for command in commandList:
+            # Get the face from the command (first character)
+            face = command[0]
+            
+            # Determine the number of rotations
+            if len(command) == 1:  # If it's just "U", "D", "R", etc.
+                rotations = 1
+                clockwise = True
+            elif command[1] == "'":  # If it's "U'", "D'", etc.
+                rotations = 1
+                clockwise = False
+            elif command[1] == "2":  # If it's "U2", "D2", etc.
+                rotations = 2
+                clockwise = True
 
-        # Rotate the face the appropriate number of times
-        for _ in range(rotations):
-            self.__rotate_face(face, clockwise)
+            # Rotate the face the appropriate number of times
+            for _ in range(rotations):
+                self.__rotate_face(face, clockwise)
 
 
     def __rotate_face(self, face, clockwise=True):
@@ -46,27 +46,33 @@ class Cube():
             rows = [self.faces['red'][0], self.faces['blue'][0], self.faces['orange'][0], self.faces['green'][0]]
             
             if clockwise:
+                # Clockwise 90-degree rotation
+                self.faces['white'] = [list(reversed(col)) for col in zip(*self.faces['white'])]
                 # Clockwise: Rotate the rows to the right
                 self.faces['red'][0], self.faces['blue'][0], self.faces['orange'][0], self.faces['green'][0] = \
-                    rows[-1], rows[0], rows[1], rows[2]
+                    rows[1], rows[2], rows[3], rows[0]
             else:
                 # Counterclockwise: Rotate the rows to the left
                 self.faces['red'][0], self.faces['blue'][0], self.faces['orange'][0], self.faces['green'][0] = \
-                    rows[1], rows[2], rows[3], rows[0]
+                    rows[-1], rows[0], rows[1], rows[2]
+                
         elif face == "D":
             # Collect rows to be rotated (for D face, row 2)
             rows = [self.faces['green'][2], self.faces['orange'][2], self.faces['blue'][2], self.faces['red'][2]]
             
             if clockwise:
+                self.faces['yellow'] = [list(reversed(col)) for col in zip(*self.faces['yellow'])]
                 # Clockwise: Rotate the rows to the right
                 self.faces['green'][2], self.faces['orange'][2], self.faces['blue'][2], self.faces['red'][2] = \
-                    rows[-1], rows[0], rows[1], rows[2]
+                    rows[1], rows[2], rows[3], rows[0]
             else:
                 # Counterclockwise: Rotate the rows to the left
                 self.faces['green'][2], self.faces['orange'][2], self.faces['blue'][2], self.faces['red'][2] = \
-                    rows[1], rows[2], rows[3], rows[0]
+                    rows[-1], rows[0], rows[1], rows[2]
+                
         if face == "R":
             if clockwise:
+                self.faces['red'] = [list(reversed(col)) for col in zip(*self.faces['red'])]
                 # Temporary storage for the right column of the green face
                 temp = [self.faces['green'][i][2] for i in range(3)]
                 
@@ -74,8 +80,9 @@ class Cube():
                     self.faces['green'][i][2] = self.faces['yellow'][i][2]
                     self.faces['yellow'][i][2] = self.faces['blue'][2-i][0]
                     self.faces['blue'][2-i][0] = self.faces['white'][i][2]
+                for i in range(3):
                     self.faces['white'][i][2] = temp[i]
-                    
+
             else:
                 # Counterclockwise rotation: reverse the order of rotations
                 temp = [self.faces['green'][i][2] for i in range(3)]
@@ -84,16 +91,20 @@ class Cube():
                     self.faces['green'][i][2] = self.faces['white'][i][2]
                     self.faces['white'][i][2] = self.faces['blue'][2-i][0]
                     self.faces['blue'][2-i][0] = self.faces['yellow'][i][2]
+                for i in range(3):
                     self.faces['yellow'][i][2] = temp[i]
+                
         if face == "L":
             if clockwise:
+                self.faces['orange'] = [list(reversed(col)) for col in zip(*self.faces['orange'])]
                 # Temporary storage for the right column of the green face
                 temp = [self.faces['green'][i][0] for i in range(3)]
 
                 for i in range(3):
                     self.faces['green'][i][0] = self.faces['white'][i][0]
                     self.faces['white'][i][0] = self.faces['blue'][2-i][2]
-                    self.faces['blue'][2-i][2] = self.faces['yellow'][i][0]
+                    self.faces['blue'][2-i][2] = self.faces['yellow'][i][0]               
+                for i in range(3):
                     self.faces['yellow'][i][0] = temp[i]
             else:
                 # Counterclockwise rotation: reverse the order of rotations
@@ -103,35 +114,41 @@ class Cube():
                     self.faces['green'][i][0] = self.faces['yellow'][i][0]
                     self.faces['yellow'][i][0] = self.faces['blue'][2-i][2]
                     self.faces['blue'][2-i][2] = self.faces['white'][i][0]
+                for i in range(3):
                     self.faces['white'][i][0] = temp[i]
+                
         if face == "F":
             if clockwise:
+                self.faces['green'] = [list(reversed(col)) for col in zip(*self.faces['green'])]
                 # Temporary storage for the bottom row of the U (Upper) face
-                temp = self.faces['white'][2][:]
-
+                temp = [self.faces['white'][2][i] for i in range(3)]
+                
                 for i in range(3):
-                    self.faces['white'][2][i] = self.faces['orange'][2 - i][2]
-                    self.faces['orange'][2 - i][2] = self.faces['yellow'][0][i]
-                    self.faces['yellow'][0][i] = self.faces['red'][2-i][0]
-                    self.faces['red'][i][0] = temp[i]
+                    self.faces['white'][2][i] = self.faces['orange'][2 - i][2]  
+                    self.faces['orange'][2 - i][2] = self.faces['yellow'][0][i] 
+                    self.faces['yellow'][0][i] = self.faces['red'][2 - i][0]
+                for i in range(3):
+                    self.faces['red'][i][0] = temp[i]    
             else:
                 # Temporary storage for the bottom row of the U (Upper) face
                 temp = self.faces['white'][2][:]
 
                 for i in range(3):
-                    self.faces['white'][2][i] = self.faces['red'][i][0]
-                    self.faces['red'][2-i][0] = self.faces['yellow'][0][i]
-                    self.faces['yellow'][0][i] = self.faces['orange'][i][2]
-                    self.faces['orange'][i][2] = temp[2-i]
+                    self.faces['white'][2][i] = self.faces['red'][i][0]  
+                    self.faces['red'][i][0] = self.faces['yellow'][0][i]  
+                    self.faces['yellow'][0][i] = self.faces['orange'][2 - i][2]  
+                    self.faces['orange'][2 - i][2] = temp[i]  
         if face == "B":
             if clockwise:
+                self.faces['blue'] = [list(reversed(col)) for col in zip(*self.faces['blue'])]
                 # Temporary storage for the bottom row of the U (Upper) face
                 temp = self.faces['white'][0][:]
 
                 for i in range(3):
                     self.faces['white'][0][i] = self.faces['red'][i][2]
                     self.faces['red'][i][2] = self.faces['yellow'][2][2-i]
-                    self.faces['yellow'][2][i] = self.faces['orange'][i][0]
+                    self.faces['yellow'][2][2-i] = self.faces['orange'][2-i][0]
+                for i in range(3):
                     self.faces['orange'][i][0] = temp[2-i]
             else:
                 # Temporary storage for the bottom row of the U (Upper) face
@@ -198,10 +215,35 @@ class Cube():
         img.show()  # Display the image
         # img.save("rubiks_cube.png")  # Save the image if needed
 
+    def print_cube(self):
+        def print_face(face):
+            for row in face:
+                print(' '.join(row))
+
+        print("White (Top):")
+        print_face(self.faces['white'])
+            
+        print("\nGreen (Front):")
+        print_face(self.faces['green'])
+            
+        print("\nRed (Right):")
+        print_face(self.faces['red'])
+            
+        print("\nBlue (Left):")
+        print_face(self.faces['blue'])
+            
+        print("\nOrange (Back):")
+        print_face(self.faces['orange'])
+            
+        print("\nYellow (Bottom):")
+        print_face(self.faces['yellow'])
+
+
 # Create a 3x3 Rubik's Cube
 rubik_cube = Cube(size=3)
 
-rubik_cube.scrambleCube("L L' L'")
+rubik_cube.scrambleCube("U D R L F B")
 # Draw the cube's image
 rubik_cube.draw_rubiks_cube()
+rubik_cube.print_cube()
 
