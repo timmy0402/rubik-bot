@@ -264,7 +264,7 @@ class Cube():
 # Create a 3x3 Rubik's Cube
 rubik_cube = Cube(size=3)
 
-rubik_cube.scrambleCube("B2 D' F2 D' R2 L' B2")
+rubik_cube.scrambleCube("U2 B' D2 B2 U2 F' U2 B' L U' R D F' L' U L2 U2 F2 D2")
 # Draw the cube's image
 rubik_cube.draw_rubiks_cube()
 rubik_cube.print_cube()
