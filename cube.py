@@ -143,8 +143,8 @@ class Cube():
                 
                 for i in range(3):
                     self.faces['white'][2][i] = self.faces['orange'][2 - i][2]  
-                    self.faces['orange'][2 - i][2] = self.faces['yellow'][0][i] 
-                    self.faces['yellow'][0][i] = self.faces['red'][2 - i][0]
+                    self.faces['orange'][2 - i][2] = self.faces['yellow'][0][2 - i] 
+                    self.faces['yellow'][0][2 - i] = self.faces['red'][i][0]
                 for i in range(3):
                     self.faces['red'][i][0] = temp[i]    
             else:
@@ -154,8 +154,9 @@ class Cube():
 
                 for i in range(3):
                     self.faces['white'][2][i] = self.faces['red'][i][0]  
-                    self.faces['red'][i][0] = self.faces['yellow'][0][i]  
-                    self.faces['yellow'][0][i] = self.faces['orange'][2 - i][2]  
+                    self.faces['red'][i][0] = self.faces['yellow'][0][2 - i]  
+                    self.faces['yellow'][0][2 - i] = self.faces['orange'][2 - i][2]  
+                for i in range(3):
                     self.faces['orange'][2 - i][2] = temp[i]  
         if face == "B":
             if clockwise:
@@ -200,8 +201,8 @@ class Cube():
 
         # Image layout configuration for 6 faces
         # Image dimensions
-        img_width = block_size * 12  # 12 blocks wide (for four faces in a row)
-        img_height = block_size * 9  # 9 blocks high (including gaps)
+        img_width = block_size * 12 + gap * 3  # 12 blocks wide (for four faces in a row)
+        img_height = block_size * 9  + gap * 2 # 9 blocks high (including gaps)
 
         # Create a new blank image with white background
         img = Image.new("RGB", (img_width, img_height), "white")
@@ -209,12 +210,12 @@ class Cube():
 
         # Coordinates for placing each face in the layout
         layout_positions = {
-            'white': (block_size * 6, 0),               # Top (above green)
-            'blue': (0, block_size * 3),                # Left of green
-            'red': (block_size * 9, block_size * 3),    # Center (left of green)
-            'green': (block_size * 6, block_size * 3),  # Center (main face)
-            'orange': (block_size * 3, block_size * 3), # Right of green
-            'yellow': (block_size * 6, block_size * 6)  # Bottom (below green)
+            'white': (block_size * 3 + gap, 0),                         # Top (above green)
+            'blue': (block_size * 9 + gap * 3, block_size * 3 + gap),   # Left of green
+            'red': (block_size * 6 + gap * 2, block_size * 3 + gap),    # Center (left of green)
+            'green': (block_size * 3 + gap, block_size * 3 + gap),      # Center (main face)
+            'orange': (0, block_size * 3 + gap),                        # Right of green
+            'yellow': (block_size * 3 + gap, block_size * 6 + gap * 2)  # Bottom (below green)
         }
 
         # Function to draw a single face of the cube
@@ -263,7 +264,7 @@ class Cube():
 # Create a 3x3 Rubik's Cube
 rubik_cube = Cube(size=3)
 
-rubik_cube.scrambleCube("B2 D'")
+rubik_cube.scrambleCube("B2 D' F2 D' R2 L' B2")
 # Draw the cube's image
 rubik_cube.draw_rubiks_cube()
 rubik_cube.print_cube()
