@@ -8,7 +8,8 @@ from dotenv import load_dotenv
 from pyTwistyScrambler import scrambler333, scrambler444
 
 import timer
-import cube
+from cube import Cube
+from draw import draw_rubiks_cube
 
 load_dotenv()
 
@@ -41,9 +42,9 @@ async def scramble(interaction : discord.Interaction, arg: str):
     if(arg == '3x3'):
         # Scramble Cube & draw image
         scramble_string = scrambler333.get_WCA_scramble()
-        visual = cube.Cube()
-        visual.scrambleCube(scramble_string)
-        img_bytes = cube.draw_rubiks_cube(visual)
+        rubik_cube = Cube(size=3)
+        rubik_cube.scrambleCube(scramble_string)
+        img_bytes = draw_rubiks_cube(rubik_cube)
 
         image_filename = "rubiks_cube.png"
 
