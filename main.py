@@ -5,7 +5,7 @@ from discord import app_commands
 import os
 from dotenv import load_dotenv
 
-import pyTwistyScrambler as pyScramble
+from pyTwistyScrambler import scrambler222,scrambler333,scrambler444,scrambler555,scrambler666, scrambler777
 
 import timer
 from cube import Cube
@@ -44,10 +44,10 @@ async def on_message(message):
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
     if(arg == '2x2'):
-        await interaction.response.send_message(pyScramble.scrambler222.get_WCA_scramble())
+        await interaction.response.send_message(scrambler222.get_WCA_scramble())
     elif(arg == '3x3'):
         # Scramble Cube & draw image
-        scramble_string = pyScramble.scrambler333.get_WCA_scramble()
+        scramble_string = scrambler333.get_WCA_scramble()
         rubik_cube = Cube(size=3)
         rubik_cube.scrambleCube(scramble_string)
         img_bytes = draw_rubiks_cube(rubik_cube)
@@ -63,19 +63,19 @@ async def scramble(interaction : discord.Interaction, arg: str):
 
     elif(arg == '4x4'):
         await interaction.response.defer()
-        scramble_text = pyScramble.scrambler444.get_WCA_scramble()
+        scramble_text = scrambler444.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     elif(arg == '5x5'):
         await interaction.response.defer()
-        scramble_text = pyScramble.scrambler555.get_WCA_scramble()
+        scramble_text = scrambler555.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     elif(arg == '6x6'):
         await interaction.response.defer()
-        scramble_text = pyScramble.scrambler666.get_WCA_scramble()
+        scramble_text = scrambler666.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     elif(arg == '7x7'):
         await interaction.response.defer()
-        scramble_text = pyScramble.scrambler777.get_WCA_scramble()
+        scramble_text = scrambler777.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
@@ -86,6 +86,18 @@ async def stopwatch(interaction: discord.Interaction):
     
     await view.wait()
     await view.disable_all_items()
+
+@bot.tree.command(name="help",description="view all command")
+async def help(interaction : discord.Interaction):
+    embed = discord.Embed(
+        title="Help",
+        description="Command list",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="scramble",value="Create a scramble with any WCA cube",inline=False)
+    embed.add_field(name="stopwatch",value="Create a stopwatch for your solve",inline=False)
+
+    await interaction.response.send_message(embed=embed)
 
 
 bot.run(os.getenv('TOKEN'))

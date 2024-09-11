@@ -14,3 +14,6 @@
     description: Time your own solve with timer
     enabled: true
     timeout: 90  # Timeout in seconds
+
+  - name: help
+    description: View all command
