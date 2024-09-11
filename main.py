@@ -39,38 +39,30 @@ async def on_message(message):
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
     if(arg == '3x3'):
+        # Scramble Cube & draw image
         scramble_string = scrambler333.get_WCA_scramble()
         visual = cube.Cube()
         visual.scrambleCube(scramble_string)
+        img_bytes = cube.draw_rubiks_cube(visual)
 
+        image_filename = "rubiks_cube.png"
+
+        # Upload Image
+        file = discord.File(fp=img_bytes,filename=image_filename)
         embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
         embed.set_image(url="attachment://rubiks_cube.png")
 
-        await interaction.response.send_message(embed=embed)
-
-        # Delete the image file after use
-        try:
-            os.remove("rubiks_cube.png")
-        except Exception as e:
-            await interaction.followup.send(f"Failed to delete image file: {e}")
+        await interaction.response.send_message(embed=embed, file=file)
 
     elif(arg == '4x4'):
         await interaction.response.defer()
         scramble_text = scrambler444.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     
-
-@bot.command()
-async def button(ctx):
-    view = discord.ui.View()
-    button = discord.ui.Button(label="click me")
-    view.add_item(button)
-    await ctx.send(view=view)
-
-@bot.command()
-async def stopwatch(ctx):
+@bot.tree.command(name="stopwatch",description="Time your own solve with timer")
+async def stopwatch(interaction: discord.Interaction):
     view = timer.TimerView(timeout=90)
-    message = await ctx.send(view=view)
+    message = await interaction.response.send_message(view=view)
     view.message = message
     
     await view.wait()

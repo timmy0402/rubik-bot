@@ -1,4 +1,5 @@
 from PIL import Image,ImageDraw
+from io import BytesIO
 
 class Cube():
 
@@ -260,13 +261,11 @@ def draw_rubiks_cube(rubik : Cube):
     for face, (start_x, start_y) in layout_positions.items():
         draw_face(face, start_x, start_y)
 
-    # Save or show the image
-    #img.show()  # Display the image
-    # img.save("rubiks_cube.png")  # Save the image if 
-    # Save the image to a file
-    img_path = "rubiks_cube.png"
-    img.save(img_path)
-    return img_path
+    img_bytes = BytesIO()
+    img.save(img_bytes, format="PNG")
+    img_bytes.seek(0)
+
+    return img_bytes    
 
 
 # Create a 3x3 Rubik's Cube
