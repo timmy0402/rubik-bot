@@ -5,7 +5,7 @@ from discord import app_commands
 import os
 from dotenv import load_dotenv
 
-from pyTwistyScrambler import scrambler333, scrambler444
+from pyTwistyScrambler import scrambler222, scrambler333, scrambler444, scrambler555, scrambler666, scrambler777
 
 import timer
 from cube import Cube
@@ -35,11 +35,17 @@ async def on_message(message):
 @bot.tree.command(name="scramble", description="Scramble")
 @app_commands.describe(arg="Choose the scramble type")
 @app_commands.choices(arg=[
+    app_commands.Choice(name="2x2", value="2x2"),
     app_commands.Choice(name="3x3", value="3x3"),
-    app_commands.Choice(name="4x4", value="4x4")
+    app_commands.Choice(name="4x4", value="5x5"),
+    app_commands.Choice(name="5x5", value="5x5"),
+    app_commands.Choice(name="6x6", value="6x6"),
+    app_commands.Choice(name="7x7", value="7x7")
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
-    if(arg == '3x3'):
+    if(arg == '2x2'):
+        await interaction.response.send_message(scrambler222.get_WCA_scramble())
+    elif(arg == '3x3'):
         # Scramble Cube & draw image
         scramble_string = scrambler333.get_WCA_scramble()
         rubik_cube = Cube(size=3)
@@ -58,6 +64,18 @@ async def scramble(interaction : discord.Interaction, arg: str):
     elif(arg == '4x4'):
         await interaction.response.defer()
         scramble_text = scrambler444.get_WCA_scramble()
+        await interaction.followup.send(scramble_text)
+    elif(arg == '5x5'):
+        await interaction.response.defer()
+        scramble_text = scrambler555.get_WCA_scramble()
+        await interaction.followup.send(scramble_text)
+    elif(arg == '6x6'):
+        await interaction.response.defer()
+        scramble_text = scrambler666.get_WCA_scramble()
+        await interaction.followup.send(scramble_text)
+    elif(arg == '7x7'):
+        await interaction.response.defer()
+        scramble_text = scrambler777.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
