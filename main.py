@@ -1,10 +1,14 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
+
 import os
 from dotenv import load_dotenv
+
 from pyTwistyScrambler import scrambler333, scrambler444
+
 import timer
+import cube
 
 load_dotenv()
 
@@ -33,13 +37,27 @@ async def on_message(message):
     app_commands.Choice(name="3x3", value="3x3"),
     app_commands.Choice(name="4x4", value="4x4")
 ])
-async def scramble(ctx, arg: str):
+async def scramble(interaction : discord.Interaction, arg: str):
     if(arg == '3x3'):
-        await ctx.response.send_message(scrambler333.get_WCA_scramble())
+        scramble_string = scrambler333.get_WCA_scramble()
+        visual = cube.Cube()
+        visual.scrambleCube(scramble_string)
+
+        embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
+        embed.set_image(url="attachment://rubiks_cube.png")
+
+        await interaction.response.send_message(embed=embed)
+
+        # Delete the image file after use
+        try:
+            os.remove("rubiks_cube.png")
+        except Exception as e:
+            await interaction.followup.send(f"Failed to delete image file: {e}")
+
     elif(arg == '4x4'):
-        await ctx.response.defer()
+        await interaction.response.defer()
         scramble_text = scrambler444.get_WCA_scramble()
-        await ctx.followup.send(scramble_text)
+        await interaction.followup.send(scramble_text)
     
 
 @bot.command()
