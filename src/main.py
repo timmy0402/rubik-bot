@@ -5,7 +5,7 @@ from discord import app_commands
 import os
 from dotenv import load_dotenv
 
-from pyTwistyScrambler import scrambler222,scrambler333,scrambler444,scrambler555,scrambler666, scrambler777
+from pyTwistyScrambler import scrambler222,scrambler333,scrambler444,scrambler555,scrambler666, scrambler777, megaminxScrambler, squareOneScrambler, skewbScrambler,clockScrambler,pyraminxScrambler
 
 import timer
 from cube import Cube
@@ -40,7 +40,12 @@ async def on_message(message):
     app_commands.Choice(name="4x4", value="5x5"),
     app_commands.Choice(name="5x5", value="5x5"),
     app_commands.Choice(name="6x6", value="6x6"),
-    app_commands.Choice(name="7x7", value="7x7")
+    app_commands.Choice(name="7x7", value="7x7"),
+    app_commands.Choice(name="pyraminx", value="pyraminx"),
+    app_commands.Choice(name="square1", value="square1"),
+    app_commands.Choice(name="megaminx", value="megaminx"),
+    app_commands.Choice(name="skewb", value="skewb"),
+    app_commands.Choice(name="clock", value="clock")
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
     if(arg == '2x2'):
@@ -76,6 +81,26 @@ async def scramble(interaction : discord.Interaction, arg: str):
     elif(arg == '7x7'):
         await interaction.response.defer()
         scramble_text = scrambler777.get_WCA_scramble()
+        await interaction.followup.send(scramble_text)
+    elif(arg == 'pyraminx'):
+        await interaction.response.defer()
+        scramble_text = pyraminxScrambler.get_WCA_scramble()
+        await interaction.followup.send(scramble_text)
+    elif(arg == 'megaminx'):
+        await interaction.response.defer()
+        scramble_text = megaminxScrambler.get_WCA_scramble()
+        await interaction.followup.send(scramble_text)
+    elif(arg == 'clock'):
+        await interaction.response.defer()
+        scramble_text = clockScrambler.get_WCA_scramble()
+        await interaction.followup.send(scramble_text)
+    elif(arg == 'square1'):
+        await interaction.response.defer()
+        scramble_text = squareOneScrambler.get_WCA_scramble()
+        await interaction.followup.send(scramble_text)
+    elif(arg == 'skewb'):
+        await interaction.response.defer()
+        scramble_text = skewbScrambler.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
