@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 
 from pyTwistyScrambler import scrambler222,scrambler333,scrambler444,scrambler555,scrambler666, scrambler777, megaminxScrambler, squareOneScrambler, skewbScrambler,clockScrambler,pyraminxScrambler
 
+import pyodbc
+
 import timer
 from cube import Cube
 from draw import draw_rubiks_cube
@@ -105,7 +107,8 @@ async def scramble(interaction : discord.Interaction, arg: str):
     
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
 async def stopwatch(interaction: discord.Interaction):
-    view = timer.TimerView(timeout=90)
+    user_id = interaction.user.id
+    view = timer.TimerView(timeout=90,user_id=user_id)
     message = await interaction.response.send_message(view=view)
     view.message = message
     
@@ -125,4 +128,4 @@ async def help(interaction : discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
-bot.run(os.getenv('TOKEN'))
+bot.run(os.getenv('TEST_TOKEN'))
