@@ -119,8 +119,13 @@ async def scramble(interaction : discord.Interaction, arg: str):
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
 async def stopwatch(interaction: discord.Interaction):
     user_id = interaction.user.id
-    view = timer.TimerView(timeout=90,user_id=user_id,db_manager=db_manager)
-    message = await interaction.response.send_message(view=view)
+    user = await bot.fetch_user(user_id)
+    view = timer.TimerView(timeout=60,user_id=user_id,db_manager=db_manager,userName=user.name)
+    await interaction.response.defer()
+    
+    await interaction.followup.send("Click a button to start or stop the timer.", view=view)
+
+    message = await interaction.original_response()
     view.message = message
     
     await view.wait()
