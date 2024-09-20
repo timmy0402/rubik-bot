@@ -12,7 +12,10 @@ class TimerView(discord.ui.View):
         db_manager.cursor.execute("SELECT UserID FROM Users WHERE DiscordID=?",(user_id))
         self.DB_ID = db_manager.cursor.fetchval()
         if(not self.DB_ID):
-            db_manager.cursor.execute("INSERT INTO Users(UserName,DiscordID) VALUE(?,?)",(userName,user_id))
+            db_manager.cursor.execute("INSERT INTO Users(UserName,DiscordID) VALUES(?,?)",(userName,user_id))
+            db_manager.cursor.commit()
+            db_manager.cursor.execute("SELECT UserID FROM Users WHERE DiscordID=?",(user_id))
+            self.DB_ID = db_manager.cursor.fetchval()
         
     startTime = None
     endTime = None
@@ -47,6 +50,7 @@ class TimerView(discord.ui.View):
             elapsedTime = round(elapsedTime,2)
             await interaction.response.send_message("Your time is: " + str(elapsedTime))
             self.db_manager.cursor.execute('INSERT INTO SolveTimes(UserID,SolveTime) VALUES(?, ?)',(self.DB_ID,elapsedTime))
+            self.db_manager.cursor.commit()
             self.stop()
     
     @discord.ui.button(label="Cancel", 
