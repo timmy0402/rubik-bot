@@ -1,10 +1,13 @@
 import time
 import discord
+from DB_Manager import DatabaseManager
 
 class TimerView(discord.ui.View):
-    def __init__(self, *, timeout: float | None = 180,user_id):
+    def __init__(self, *, timeout: float | None = 180,user_id,db_manager:DatabaseManager):
         super().__init__(timeout=timeout)
         self.user_id = user_id
+        self.db_manager = db_manager
+        
     startTime = None
     endTime = None
     

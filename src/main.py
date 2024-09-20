@@ -13,6 +13,8 @@ import timer
 from cube import Cube
 from draw import draw_rubiks_cube
 
+from DB_Manager import DatabaseManager
+
 load_dotenv()
 
 intents = discord.Intents.default()
@@ -20,10 +22,19 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
 
+cursor = None
+
+db_manager = DatabaseManager()
+
 @bot.event
 async def on_ready():
     print(f'We have logged as an {bot.user}')
+    db_manager.connect()
     await bot.tree.sync()
+
+@bot.event
+async def on_disconnect():
+    db_manager.close()
 
 
 @bot.event
@@ -108,7 +119,7 @@ async def scramble(interaction : discord.Interaction, arg: str):
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
 async def stopwatch(interaction: discord.Interaction):
     user_id = interaction.user.id
-    view = timer.TimerView(timeout=90,user_id=user_id)
+    view = timer.TimerView(timeout=90,user_id=user_id,db_manager=db_manager)
     message = await interaction.response.send_message(view=view)
     view.message = message
     
