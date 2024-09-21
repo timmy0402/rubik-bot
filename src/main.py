@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands
+from discord.ext import commands, tasks
 from discord import app_commands
 
 import os
@@ -30,6 +30,9 @@ db_manager = DatabaseManager()
 async def on_ready():
     print(f'We have logged as an {bot.user}')
     db_manager.connect()
+    if not keep_database_alive.is_running():
+        print("Starting keep-alive task...")
+        keep_database_alive.start()
     await bot.tree.sync()
 
 @bot.event
@@ -189,6 +192,11 @@ async def help(interaction : discord.Interaction):
     embed.add_field(name="delete_time",value="Delete a time by TimeID",inline=False)
 
     await interaction.response.send_message(embed=embed)
+
+@tasks.loop(minutes=5)
+async def keep_database_alive():
+    print("Executing keep-alive query...")
+    db_manager.keep_alive()
 
 
 bot.run(os.getenv('TOKEN'))
