@@ -189,4 +189,4 @@ async def help(interaction : discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 
-bot.run(os.getenv('TEST_TOKEN'))
+bot.run(os.getenv('TOKEN'))
