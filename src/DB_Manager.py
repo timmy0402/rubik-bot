@@ -3,11 +3,11 @@ import os
 from dotenv import load_dotenv
 #loading database keys
 load_dotenv()
-server = os.getenv('SERVER')
-database = os.getenv('DATABASE')
-username = os.getenv('USERNAME_DB')
-password = os.getenv('PASSWORD')
-driver = os.getenv('DRIVER')
+server = os.getenv('cubecrafterdb.database.windows.net')
+database = os.getenv('cubeCrafterRecord')
+username = os.getenv('CloudSA3c09cb3a')
+password = os.getenv('G?ayhZ#X"j7i!Z5')
+driver = os.getenv('{ODBC Driver 18 for SQL Server}')
 
 class DatabaseManager:
     def __init__(self):
