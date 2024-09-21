@@ -153,6 +153,29 @@ async def time(interaction : discord.Interaction):
 
     await interaction.response.send_message(embed=embed)
 
+@bot.tree.command(name="delete_time",description="Delete a time from your solve times")
+@app_commands.describe(timeid="The ID of the time to delete")
+async def deleteTime(interaction : discord.Interaction,timeid : str):
+    user_id = interaction.user.id
+    db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
+    DB_ID = db_manager.cursor.fetchval()
+    if not DB_ID:
+        await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
+        return
+    db_manager.cursor.execute('SELECT UserID FROM SolveTimes WHERE TimeID = ?',(timeid))
+    temp_id = db_manager.cursor.fetchval()
+    if not temp_id:
+        await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
+        return
+    if temp_id != DB_ID:
+        await interaction.response.send_message("This is not your time, try a different one")
+        return
+    db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
+    db_manager.cursor.commit()
+    await interaction.response.send_message(f"`{str(timeid)}`" + " is deleted")
+
+
+
 @bot.tree.command(name="help",description="view all command")
 async def help(interaction : discord.Interaction):
     embed = discord.Embed(
