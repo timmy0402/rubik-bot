@@ -7,9 +7,13 @@ from dotenv import load_dotenv
 
 from pyTwistyScrambler import scrambler222,scrambler333,scrambler444,scrambler555,scrambler666, scrambler777, megaminxScrambler, squareOneScrambler, skewbScrambler,clockScrambler,pyraminxScrambler
 
+import pyodbc
+
 import timer
 from cube import Cube
 from draw import draw_rubiks_cube
+
+from DB_Manager import DatabaseManager
 
 load_dotenv()
 
@@ -18,10 +22,19 @@ intents.message_content = True
 
 bot = commands.Bot(command_prefix='/', intents=intents)
 
+cursor = None
+
+db_manager = DatabaseManager()
+
 @bot.event
 async def on_ready():
     print(f'We have logged as an {bot.user}')
+    db_manager.connect()
     await bot.tree.sync()
+
+@bot.event
+async def on_disconnect():
+    db_manager.close()
 
 
 @bot.event
@@ -105,12 +118,63 @@ async def scramble(interaction : discord.Interaction, arg: str):
     
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
 async def stopwatch(interaction: discord.Interaction):
-    view = timer.TimerView(timeout=90)
-    message = await interaction.response.send_message(view=view)
+    user_id = interaction.user.id
+    user = await bot.fetch_user(user_id)
+    view = timer.TimerView(timeout=90,user_id=user_id,db_manager=db_manager,userName=user.name)
+    await interaction.response.defer()
+    
+    await interaction.followup.send("Click a button to start or stop the timer.", view=view)
+
+    message = await interaction.original_response()
     view.message = message
     
     await view.wait()
     await view.disable_all_items()
+
+@bot.tree.command(name="time",description="Display time of your last 10 solves")
+async def time(interaction : discord.Interaction):
+    user_id = interaction.user.id
+    user = await bot.fetch_user(user_id)
+    db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
+    DB_ID = db_manager.cursor.fetchval()
+    db_manager.cursor.execute('SELECT TimeID, SolveTime FROM SolveTimes WHERE UserID=? ORDER BY TimeID DESC',(DB_ID))
+    rows = db_manager.cursor.fetchall()
+    embed = discord.Embed(
+        title= str(user.name) + "'s solve times: ",
+        description="Your last 10 solve times",
+        color=discord.Color.blue()
+    )
+    embed.add_field(name="TimeID", value="", inline=True)
+    embed.add_field(name="SolveTimes", value="", inline=True)
+
+    for row in rows:
+        embed.add_field(name="", value=f"`{str(row[0]):<10} {str(row[1]):<10}`", inline=False)
+
+
+    await interaction.response.send_message(embed=embed)
+
+@bot.tree.command(name="delete_time",description="Delete a time from your solve times")
+@app_commands.describe(timeid="The ID of the time to delete")
+async def deleteTime(interaction : discord.Interaction,timeid : str):
+    user_id = interaction.user.id
+    db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
+    DB_ID = db_manager.cursor.fetchval()
+    if not DB_ID:
+        await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
+        return
+    db_manager.cursor.execute('SELECT UserID FROM SolveTimes WHERE TimeID = ?',(timeid))
+    temp_id = db_manager.cursor.fetchval()
+    if not temp_id:
+        await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
+        return
+    if temp_id != DB_ID:
+        await interaction.response.send_message("This is not your time, try a different one")
+        return
+    db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
+    db_manager.cursor.commit()
+    await interaction.response.send_message(f"`{str(timeid)}`" + " is deleted")
+
+
 
 @bot.tree.command(name="help",description="view all command")
 async def help(interaction : discord.Interaction):
