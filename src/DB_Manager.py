@@ -3,10 +3,10 @@ import os
 from dotenv import load_dotenv
 #loading database keys
 load_dotenv()
-server = os.getenv('AZURE_SQL_HOST')
-database = os.getenv('AZURE_SQL_DATABASE')
-username = os.getenv('AZURE_SQL_USERNAME')
-password = os.getenv('AZURE_SQL_PASSWORD')
+server = os.getenv('SERVER')
+database = os.getenv('DATABASE')
+username = os.getenv('USERNAME_DB')
+password = os.getenv('PASSWORD')
 driver = os.getenv('DRIVER')
 
 class DatabaseManager:
