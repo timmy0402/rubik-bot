@@ -185,6 +185,8 @@ async def help(interaction : discord.Interaction):
     )
     embed.add_field(name="scramble",value="Create a scramble with any WCA cube",inline=False)
     embed.add_field(name="stopwatch",value="Create a stopwatch for your solve",inline=False)
+    embed.add_field(name="time",value="Show the time for your last 10 solves",inline=False)
+    embed.add_field(name="delete_time",value="Delete a time by TimeID",inline=False)
 
     await interaction.response.send_message(embed=embed)
 
