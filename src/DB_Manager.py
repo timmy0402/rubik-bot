@@ -16,7 +16,7 @@ class DatabaseManager:
 
     def connect(self):
         self.connection = pyodbc.connect(
-            f'DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
+            f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30;'
         )
         self.cursor = self.connection.cursor()
         print('DB connected')
