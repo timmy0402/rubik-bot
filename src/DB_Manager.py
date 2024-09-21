@@ -4,7 +4,6 @@ from dotenv import load_dotenv
 #loading database keys
 load_dotenv()
 server = os.getenv('AZURE_SQL_HOST')
-port = os.getenv('AZURE_SQL_PORT')
 database = os.getenv('AZURE_SQL_DATABASE')
 username = os.getenv('AZURE_SQL_USERNAME')
 password = os.getenv('AZURE_SQL_PASSWORD')
