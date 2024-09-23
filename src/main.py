@@ -29,10 +29,6 @@ db_manager = DatabaseManager()
 @bot.event
 async def on_ready():
     print(f'We have logged as an {bot.user}')
-    db_manager.connect()
-    if not keep_database_alive.is_running():
-        print("Starting keep-alive task...")
-        keep_database_alive.start()
     await bot.tree.sync()
 
 @bot.event
@@ -123,7 +119,7 @@ async def scramble(interaction : discord.Interaction, arg: str):
 async def stopwatch(interaction: discord.Interaction):
     user_id = interaction.user.id
     user = await bot.fetch_user(user_id)
-    view = timer.TimerView(timeout=90,user_id=user_id,db_manager=db_manager,userName=user.name)
+    view = timer.TimerView(timeout=90,user_id=user_id,userName=user.name)
     await interaction.response.defer()
     
     await interaction.followup.send("Click a button to start or stop the timer.", view=view)
@@ -136,6 +132,7 @@ async def stopwatch(interaction: discord.Interaction):
 
 @bot.tree.command(name="time",description="Display time of your last 10 solves")
 async def time(interaction : discord.Interaction):
+    db_manager.connect()
     user_id = interaction.user.id
     user = await bot.fetch_user(user_id)
     db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
@@ -153,12 +150,13 @@ async def time(interaction : discord.Interaction):
     for row in rows:
         embed.add_field(name="", value=f"`{str(row[0]):<10} {str(row[1]):<10}`", inline=False)
 
-
+    db_manager.close()
     await interaction.response.send_message(embed=embed)
 
 @bot.tree.command(name="delete_time",description="Delete a time from your solve times")
 @app_commands.describe(timeid="The ID of the time to delete")
 async def deleteTime(interaction : discord.Interaction,timeid : str):
+    db_manager.connect()
     user_id = interaction.user.id
     db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
     DB_ID = db_manager.cursor.fetchval()
@@ -175,6 +173,7 @@ async def deleteTime(interaction : discord.Interaction,timeid : str):
         return
     db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
     db_manager.cursor.commit()
+    db_manager.close()
     await interaction.response.send_message(f"`{str(timeid)}`" + " is deleted")
 
 
@@ -193,10 +192,7 @@ async def help(interaction : discord.Interaction):
 
     await interaction.response.send_message(embed=embed)
 
-@tasks.loop(minutes=5)
-async def keep_database_alive():
-    print("Executing keep-alive query...")
-    db_manager.keep_alive()
+
 
 
 bot.run(os.getenv('TOKEN'))
