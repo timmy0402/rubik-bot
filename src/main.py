@@ -132,26 +132,31 @@ async def stopwatch(interaction: discord.Interaction):
 
 @bot.tree.command(name="time",description="Display time of your last 10 solves")
 async def time(interaction : discord.Interaction):
-    db_manager.connect()
-    user_id = interaction.user.id
-    user = await bot.fetch_user(user_id)
-    db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
-    DB_ID = db_manager.cursor.fetchval()
-    db_manager.cursor.execute('SELECT TimeID, SolveTime FROM SolveTimes WHERE UserID=? ORDER BY TimeID DESC',(DB_ID))
-    rows = db_manager.cursor.fetchall()
-    embed = discord.Embed(
-        title= str(user.name) + "'s solve times: ",
-        description="Your last 10 solve times",
-        color=discord.Color.blue()
-    )
-    embed.add_field(name="TimeID", value="", inline=True)
-    embed.add_field(name="SolveTimes", value="", inline=True)
+    try:
+        await interaction.response.defer()
+        db_manager.connect()
+        user_id = interaction.user.id
+        user = await bot.fetch_user(user_id)
+        db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
+        DB_ID = db_manager.cursor.fetchval()
+        db_manager.cursor.execute('SELECT TimeID, SolveTime FROM SolveTimes WHERE UserID=? ORDER BY TimeID DESC',(DB_ID))
+        rows = db_manager.cursor.fetchall()
+        embed = discord.Embed(
+            title= str(user.name) + "'s solve times: ",
+            description="Your last 10 solve times",
+            color=discord.Color.blue()
+        )
+        embed.add_field(name="TimeID", value="", inline=True)
+        embed.add_field(name="SolveTimes", value="", inline=True)
 
-    for row in rows:
-        embed.add_field(name="", value=f"`{str(row[0]):<10} {str(row[1]):<10}`", inline=False)
+        for row in rows:
+            embed.add_field(name="", value=f"`{str(row[0]):<10} {str(row[1]):<10}`", inline=False)
 
-    db_manager.close()
-    await interaction.response.send_message(embed=embed)
+        db_manager.close()
+        await interaction.followup.send(embed=embed)
+    except pyodbc.Error as e:
+        await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
+        
 
 @bot.tree.command(name="delete_time",description="Delete a time from your solve times")
 @app_commands.describe(timeid="The ID of the time to delete")
@@ -195,4 +200,4 @@ async def help(interaction : discord.Interaction):
 
 
 
-bot.run(os.getenv('TOKEN'))
+bot.run(os.getenv('TEST_TOKEN'))
