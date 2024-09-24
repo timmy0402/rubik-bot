@@ -200,4 +200,4 @@ async def help(interaction : discord.Interaction):
 
 
 
-bot.run(os.getenv('TEST_TOKEN'))
+bot.run(os.getenv('TOKEN'))
