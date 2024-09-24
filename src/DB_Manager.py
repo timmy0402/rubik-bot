@@ -23,6 +23,7 @@ class DatabaseManager:
             print('DB connected')
         except pyodbc.Error as e:
             print(f"Error connecting to database: {e}")
+            raise e
             
 
     def close(self):

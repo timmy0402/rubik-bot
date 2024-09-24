@@ -25,7 +25,6 @@ class TimerView(discord.ui.View):
     async def disable_all_items(self):
         for item in self.children:
             item.disabled = True
-        self.db_manager.close()
         await self.message.edit(view=self)
 
     async def on_timeout(self) -> None:
