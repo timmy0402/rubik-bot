@@ -119,21 +119,24 @@ async def scramble(interaction : discord.Interaction, arg: str):
 async def stopwatch(interaction: discord.Interaction):
     user_id = interaction.user.id
     user = await bot.fetch_user(user_id)
-    view = timer.TimerView(timeout=90,user_id=user_id,userName=user.name)
     await interaction.response.defer()
-    
-    await interaction.followup.send("Click a button to start or stop the timer.", view=view)
+    try:
+        view = timer.TimerView(timeout=90,user_id=user_id,userName=user.name)        
+        await interaction.followup.send("Click a button to start or stop the timer.", view=view)
 
-    message = await interaction.original_response()
-    view.message = message
-    
-    await view.wait()
-    await view.disable_all_items()
+        message = await interaction.original_response()
+        view.message = message
+        
+        await view.wait()
+        await view.disable_all_items()
+    except pyodbc.Error as e:
+        await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
+
 
 @bot.tree.command(name="time",description="Display time of your last 10 solves")
 async def time(interaction : discord.Interaction):
+    await interaction.response.defer()
     try:
-        await interaction.response.defer()
         db_manager.connect()
         user_id = interaction.user.id
         user = await bot.fetch_user(user_id)
@@ -161,25 +164,29 @@ async def time(interaction : discord.Interaction):
 @bot.tree.command(name="delete_time",description="Delete a time from your solve times")
 @app_commands.describe(timeid="The ID of the time to delete")
 async def deleteTime(interaction : discord.Interaction,timeid : str):
-    db_manager.connect()
-    user_id = interaction.user.id
-    db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
-    DB_ID = db_manager.cursor.fetchval()
-    if not DB_ID:
-        await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
-        return
-    db_manager.cursor.execute('SELECT UserID FROM SolveTimes WHERE TimeID = ?',(timeid))
-    temp_id = db_manager.cursor.fetchval()
-    if not temp_id:
-        await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
-        return
-    if temp_id != DB_ID:
-        await interaction.response.send_message("This is not your time, try a different one")
-        return
-    db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
-    db_manager.cursor.commit()
-    db_manager.close()
-    await interaction.response.send_message(f"`{str(timeid)}`" + " is deleted")
+    await interaction.response.defer()
+    try:
+        db_manager.connect()
+        user_id = interaction.user.id
+        db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
+        DB_ID = db_manager.cursor.fetchval()
+        if not DB_ID:
+            await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
+            return
+        db_manager.cursor.execute('SELECT UserID FROM SolveTimes WHERE TimeID = ?',(timeid))
+        temp_id = db_manager.cursor.fetchval()
+        if not temp_id:
+            await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
+            return
+        if temp_id != DB_ID:
+            await interaction.response.send_message("This is not your time, try a different one")
+            return
+        db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
+        db_manager.cursor.commit()
+        db_manager.close()
+        await interaction.followup.send(f"`{str(timeid)}`" + " is deleted")
+    except pyodbc.Error as e:
+        await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
 
 
 
