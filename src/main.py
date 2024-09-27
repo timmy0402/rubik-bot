@@ -119,10 +119,9 @@ async def scramble(interaction : discord.Interaction, arg: str):
 async def stopwatch(interaction: discord.Interaction):
     user_id = interaction.user.id
     user = await bot.fetch_user(user_id)
+    await interaction.response.defer()
     try:
-        view = timer.TimerView(timeout=90,user_id=user_id,userName=user.name)
-        await interaction.response.defer()
-        
+        view = timer.TimerView(timeout=90,user_id=user_id,userName=user.name)        
         await interaction.followup.send("Click a button to start or stop the timer.", view=view)
 
         message = await interaction.original_response()
@@ -136,8 +135,8 @@ async def stopwatch(interaction: discord.Interaction):
 
 @bot.tree.command(name="time",description="Display time of your last 10 solves")
 async def time(interaction : discord.Interaction):
+    await interaction.response.defer()
     try:
-        await interaction.response.defer()
         db_manager.connect()
         user_id = interaction.user.id
         user = await bot.fetch_user(user_id)
@@ -165,6 +164,7 @@ async def time(interaction : discord.Interaction):
 @bot.tree.command(name="delete_time",description="Delete a time from your solve times")
 @app_commands.describe(timeid="The ID of the time to delete")
 async def deleteTime(interaction : discord.Interaction,timeid : str):
+    await interaction.response.defer()
     try:
         db_manager.connect()
         user_id = interaction.user.id
@@ -184,7 +184,7 @@ async def deleteTime(interaction : discord.Interaction,timeid : str):
         db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
         db_manager.cursor.commit()
         db_manager.close()
-        await interaction.response.send_message(f"`{str(timeid)}`" + " is deleted")
+        await interaction.followup.send(f"`{str(timeid)}`" + " is deleted")
     except pyodbc.Error as e:
         await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
 
@@ -207,4 +207,4 @@ async def help(interaction : discord.Interaction):
 
 
 
-bot.run(os.getenv('TEST_TOKEN'))
+bot.run(os.getenv('TOKEN'))
