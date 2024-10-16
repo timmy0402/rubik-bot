@@ -49,13 +49,13 @@ def rotate_face(cube, face, clockwise=True):
         if clockwise:
             cube.faces['red'] = rotate_90_clockwise(cube.faces['red'])
             # Temporary storage for the right column of the green face
-            temp = [cube.faces['green'][i][2] for i in range(3)]
+            temp = [cube.faces['green'][i][2] for i in range(cube.size)]
             
-            for i in range(3):
+            for i in range(cube.size):
                 cube.faces['green'][i][2] = cube.faces['yellow'][i][2]
                 cube.faces['yellow'][i][2] = cube.faces['blue'][2-i][0]
                 cube.faces['blue'][2-i][0] = cube.faces['white'][i][2]
-            for i in range(3):
+            for i in range(cube.size):
                 cube.faces['white'][i][2] = temp[i]
 
         else:

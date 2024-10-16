@@ -47,3 +47,7 @@ class Cube:
         print_face(self.faces['orange'])
         print("\nYellow (Bottom):")
         print_face(self.faces['yellow'])
+
+rubik_cube = Cube(size=3)
+rubik_cube.scrambleCube("F U2 R2 F' U' R' U2 F2 R U'")
+rubik_cube.print_cube()

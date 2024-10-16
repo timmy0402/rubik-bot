@@ -61,6 +61,8 @@ async def on_message(message):
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
     if(arg == '2x2'):
+        scramble_string = scrambler222.get_WCA_scramble()
+        rubik_cube = Cube(size=2)
         await interaction.response.send_message(scrambler222.get_WCA_scramble())
     elif(arg == '3x3'):
         # Scramble Cube & draw image
@@ -200,4 +202,4 @@ async def help(interaction : discord.Interaction):
 
 
 
-bot.run(os.getenv('TOKEN'))
+bot.run(os.getenv('TEST_TOKEN'))
