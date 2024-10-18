@@ -66,9 +66,20 @@ async def on_message(message):
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
     if(arg == '2x2'):
+        # Scramble Cube & draw image
         scramble_string = scrambler222.get_WCA_scramble()
         rubik_cube = Cube(size=2)
-        await interaction.response.send_message(scrambler222.get_WCA_scramble())
+        rubik_cube.scrambleCube(scramble_string)
+        img_bytes = draw_rubiks_cube(rubik_cube)
+
+        image_filename = "rubiks_cube.png"
+
+        # Upload Image
+        file = discord.File(fp=img_bytes,filename=image_filename)
+        embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
+        embed.set_image(url="attachment://rubiks_cube.png")
+
+        await interaction.response.send_message(embed=embed, file=file)
     elif(arg == '3x3'):
         # Scramble Cube & draw image
         scramble_string = scrambler333.get_WCA_scramble()

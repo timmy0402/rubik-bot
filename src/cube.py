@@ -1,4 +1,5 @@
 from utils import rotate_face
+from draw import draw_rubiks_cube
 
 class Cube:
     def __init__(self, size=3):
