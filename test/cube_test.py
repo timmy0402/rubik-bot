@@ -48,6 +48,36 @@ cube333_2.faces['yellow'] = [['green', 'red', 'green'],
                              ['orange', 'yellow', 'blue'],
                              ['blue', 'red', 'yellow']]
 
+cube222_1 = Cube(size=2)
+cube222_1_scramble = "F R U R' F U' F U' F R U'"
+cube222_1.faces['white'] = [['blue', 'orange'],
+                            ['red', 'blue']]
+cube222_1.faces['orange'] = [['red', 'white'],
+                             ['orange', 'green']]
+cube222_1.faces['green'] = [['green', 'orange'],
+                            ['red', 'yellow']]
+cube222_1.faces['red'] = [['white', 'green'], 
+                          ['red', 'green']]
+cube222_1.faces['blue'] = [['white', 'white'],
+                           ['yellow', 'blue']]
+cube222_1.faces['yellow'] = [['yellow', 'blue'],
+                             ['yellow', 'orange']]
+
+cube222_2 = Cube(size=2)
+cube222_2_scramble = "U' R U2 R2 F R U' R' F' U R"
+cube222_2.faces['white'] = [['green', 'red'],
+                            ['green', 'orange']]
+cube222_2.faces['orange'] = [['white', 'orange'],
+                             ['orange', 'green']]
+cube222_2.faces['green'] = [['yellow', 'white'],
+                            ['red', 'white']]
+cube222_2.faces['red'] = [['blue', 'yellow'], 
+                          ['blue', 'orange']]
+cube222_2.faces['blue'] = [['blue', 'red'],
+                           ['white', 'blue']]
+cube222_2.faces['yellow'] = [['yellow', 'red'],
+                             ['yellow', 'green']]
+
 class TestCubeMethod(unittest.TestCase):
 
     def test_cube_creation(self):
@@ -68,6 +98,17 @@ class TestCubeMethod(unittest.TestCase):
         sample_2.scrambleCube(cube333_2_scramble)
         for face in sample_2.faces:
             self.assertEqual(sample_2.faces[face], cube333_2.faces[face])
+
+    def test_cube_scramble222(self):
+        sample_1 = Cube(size=2)
+        sample_1.scrambleCube(cube222_1_scramble)
+        for face in sample_1.faces:
+            self.assertEqual(sample_1.faces[face], cube222_1.faces[face])
+
+        sample_2 = Cube(size=2)
+        sample_2.scrambleCube(cube222_2_scramble)
+        for face in sample_2.faces:
+            self.assertEqual(sample_2.faces[face], cube222_2.faces[face])
 
 
 if __name__ == '__main__':
