@@ -29,6 +29,11 @@ db_manager = DatabaseManager()
 @bot.event
 async def on_ready():
     print(f'We have logged as an {bot.user}')
+    # Uncommented to make database run 24/7
+    #    db_manager.connect()
+    #if not keep_database_alive.is_running():
+    #    print("Starting keep-alive task...")
+    #    keep_database_alive.start()
     await bot.tree.sync()
 
 @bot.event
@@ -199,6 +204,11 @@ async def help(interaction : discord.Interaction):
 
     await interaction.response.send_message(embed=embed)
 
+# Uncommented to make DB run 24/7
+#@tasks.loop(minutes=5)
+#async def keep_database_alive():
+#    print("Executing keep-alive query...")
+#    db_manager.keep_alive()
 
 
 
