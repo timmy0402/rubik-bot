@@ -12,26 +12,35 @@ class Cube:
             'yellow': self.__createFace('yellow'),
             'orange': self.__createFace('orange')
         }
+        self.sides = ("F","D","U","R","L","B")
 
+    # Create a 2d array with a color by nxn
     def __createFace(self, color):
         return [[color for _ in range(self.size)] for _ in range(self.size)]
 
     def scrambleCube(self, scrambleLine: str):
         commandList = scrambleLine.split()
         for command in commandList:
-            face = command[0]
-            if len(command) == 1:
-                rotations = 1
-                clockwise = True
-            elif command[1] == "'":
-                rotations = 1
-                clockwise = False
-            elif command[1] == "2":
-                rotations = 2
-                clockwise = True
+            # default paramenter for single character scramble
+            rotations = 1
+            clockwise = True
+            two_layer = False
+            three_layer = False
+            # search for face and special notations
+            for element in command:
+                if element in self.sides:
+                    face = element
+                if element == "'":
+                    clockwise = False
+                if element == "2":
+                    rotations = 2
+                if element == "w":
+                    two_layer = True
+                if element == "3":
+                    three_layer = True
             for _ in range(rotations):
-                rotate_face(self, face, clockwise)
-
+                rotate_face(self, face, clockwise, two_layer, three_layer)
+                
     def print_cube(self):
         def print_face(face):
             for row in face:

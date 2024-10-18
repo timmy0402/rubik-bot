@@ -12,7 +12,7 @@ def rotate_90_clockwise(face):
     rotated = [row[::-1] for row in transpose]
     return rotated
 
-def rotate_face(cube, face, clockwise=True):
+def rotate_face(cube, face, clockwise, two_layers, three_layer):
     if face == "U":
         # Collect rows to be rotated (for U face, row 0)
         rows = [cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0]]
