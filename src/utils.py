@@ -49,94 +49,94 @@ def rotate_face(cube, face, clockwise=True):
         if clockwise:
             cube.faces['red'] = rotate_90_clockwise(cube.faces['red'])
             # Temporary storage for the right column of the green face
-            temp = [cube.faces['green'][i][2] for i in range(cube.size)]
+            temp = [cube.faces['green'][i][cube.size - 1] for i in range(cube.size)]
             
             for i in range(cube.size):
-                cube.faces['green'][i][2] = cube.faces['yellow'][i][2]
-                cube.faces['yellow'][i][2] = cube.faces['blue'][2-i][0]
-                cube.faces['blue'][2-i][0] = cube.faces['white'][i][2]
+                cube.faces['green'][i][cube.size - 1] = cube.faces['yellow'][i][cube.size - 1]
+                cube.faces['yellow'][i][cube.size - 1] = cube.faces['blue'][cube.size - 1 - i][0]
+                cube.faces['blue'][cube.size - 1 - i][0] = cube.faces['white'][i][cube.size - 1]
             for i in range(cube.size):
-                cube.faces['white'][i][2] = temp[i]
+                cube.faces['white'][i][cube.size - 1] = temp[i]
 
         else:
             cube.faces['red'] = rotate_90_counterClockwise(cube.faces['red'])
             # Counterclockwise rotation: reverse the order of rotations
-            temp = [cube.faces['green'][i][2] for i in range(3)]
+            temp = [cube.faces['green'][i][cube.size - 1] for i in range(cube.size)]
             
-            for i in range(3):
-                cube.faces['green'][i][2] = cube.faces['white'][i][2]
-                cube.faces['white'][i][2] = cube.faces['blue'][2-i][0]
-                cube.faces['blue'][2-i][0] = cube.faces['yellow'][i][2]
-            for i in range(3):
-                cube.faces['yellow'][i][2] = temp[i]
+            for i in range(cube.size):
+                cube.faces['green'][i][cube.size - 1] = cube.faces['white'][i][cube.size - 1]
+                cube.faces['white'][i][cube.size - 1] = cube.faces['blue'][cube.size - 1 - i][0]
+                cube.faces['blue'][cube.size - 1 - i][0] = cube.faces['yellow'][i][cube.size - 1]
+            for i in range(cube.size):
+                cube.faces['yellow'][i][cube.size - 1] = temp[i]
             
     if face == "L":
         if clockwise:
             cube.faces['orange'] = rotate_90_clockwise(cube.faces['orange'])
             # Temporary storage for the right column of the green face
-            temp = [cube.faces['green'][i][0] for i in range(3)]
+            temp = [cube.faces['green'][i][0] for i in range(cube.size)]
 
-            for i in range(3):
+            for i in range(cube.size):
                 cube.faces['green'][i][0] = cube.faces['white'][i][0]
-                cube.faces['white'][i][0] = cube.faces['blue'][2-i][2]
-                cube.faces['blue'][2-i][2] = cube.faces['yellow'][i][0]               
-            for i in range(3):
+                cube.faces['white'][i][0] = cube.faces['blue'][cube.size - 1 - i][cube.size - 1]
+                cube.faces['blue'][cube.size - 1 - i][cube.size - 1] = cube.faces['yellow'][i][0]               
+            for i in range(cube.size):
                 cube.faces['yellow'][i][0] = temp[i]
         else:
             cube.faces['orange'] = rotate_90_counterClockwise(cube.faces['orange'])
             # Counterclockwise rotation: reverse the order of rotations
-            temp = [cube.faces['green'][i][0] for i in range(3)]
+            temp = [cube.faces['green'][i][0] for i in range(cube.size)]
             
-            for i in range(3):
+            for i in range(cube.size):
                 cube.faces['green'][i][0] = cube.faces['yellow'][i][0]
-                cube.faces['yellow'][i][0] = cube.faces['blue'][2-i][2]
-                cube.faces['blue'][2-i][2] = cube.faces['white'][i][0]
-            for i in range(3):
+                cube.faces['yellow'][i][0] = cube.faces['blue'][cube.size - 1 - i][cube.size - 1]
+                cube.faces['blue'][cube.size - 1 - i][cube.size - 1] = cube.faces['white'][i][0]
+            for i in range(cube.size):
                 cube.faces['white'][i][0] = temp[i]
             
     if face == "F":
         if clockwise:
             cube.faces['green'] = rotate_90_clockwise(cube.faces['green'])
             # Temporary storage for the bottom row of the U (Upper) face
-            temp = [cube.faces['white'][2][i] for i in range(3)]
+            temp = [cube.faces['white'][cube.size - 1][i] for i in range(cube.size)]
             
-            for i in range(3):
-                cube.faces['white'][2][i] = cube.faces['orange'][2 - i][2]  
-                cube.faces['orange'][2 - i][2] = cube.faces['yellow'][0][2 - i] 
-                cube.faces['yellow'][0][2 - i] = cube.faces['red'][i][0]
-            for i in range(3):
+            for i in range(cube.size):
+                cube.faces['white'][cube.size - 1][i] = cube.faces['orange'][cube.size - 1 - i][cube.size - 1]  
+                cube.faces['orange'][cube.size - 1 - i][cube.size - 1] = cube.faces['yellow'][0][cube.size - 1 - i] 
+                cube.faces['yellow'][0][cube.size - 1 - i] = cube.faces['red'][i][0]
+            for i in range(cube.size):
                 cube.faces['red'][i][0] = temp[i]    
         else:
             cube.faces['green'] = rotate_90_counterClockwise(cube.faces['green'])
             # Temporary storage for the bottom row of the U (Upper) face
-            temp = cube.faces['white'][2][:]
+            temp = cube.faces['white'][cube.size - 1][:]
 
-            for i in range(3):
-                cube.faces['white'][2][i] = cube.faces['red'][i][0]  
-                cube.faces['red'][i][0] = cube.faces['yellow'][0][2 - i]  
-                cube.faces['yellow'][0][2 - i] = cube.faces['orange'][2 - i][2]  
-            for i in range(3):
-                cube.faces['orange'][2 - i][2] = temp[i]  
+            for i in range(cube.size):
+                cube.faces['white'][cube.size - 1][i] = cube.faces['red'][i][0]  
+                cube.faces['red'][i][0] = cube.faces['yellow'][0][cube.size - 1 - i]  
+                cube.faces['yellow'][0][cube.size - 1 - i] = cube.faces['orange'][cube.size - 1 - i][cube.size - 1]  
+            for i in range(cube.size):
+                cube.faces['orange'][cube.size - 1 - i][cube.size - 1] = temp[i]  
     if face == "B":
         if clockwise:
             cube.faces['blue'] = rotate_90_clockwise(cube.faces['blue'])
             # Temporary storage for the bottom row of the U (Upper) face
             temp = cube.faces['white'][0][:]
 
-            for i in range(3):
-                cube.faces['white'][0][i] = cube.faces['red'][i][2]
-                cube.faces['red'][i][2] = cube.faces['yellow'][2][2-i]
-                cube.faces['yellow'][2][2-i] = cube.faces['orange'][2-i][0]
-            for i in range(3):
-                cube.faces['orange'][i][0] = temp[2-i]
+            for i in range(cube.size):
+                cube.faces['white'][0][i] = cube.faces['red'][i][cube.size - 1]
+                cube.faces['red'][i][cube.size - 1] = cube.faces['yellow'][cube.size - 1][cube.size - 1 - i]
+                cube.faces['yellow'][cube.size - 1][cube.size - 1 - i] = cube.faces['orange'][cube.size - 1 - i][0]
+            for i in range(cube.size):
+                cube.faces['orange'][i][0] = temp[cube.size - 1 - i]
         else:
             cube.faces['blue'] = rotate_90_counterClockwise(cube.faces['blue'])
             # Temporary storage for the bottom row of the U (Upper) face
             temp = cube.faces['white'][0][:]
 
-            for i in range(3):
-                cube.faces['white'][0][i] = cube.faces['orange'][2-i][0]
-                cube.faces['orange'][2-i][0] = cube.faces['yellow'][2][2-i]
-                cube.faces['yellow'][2][2-i] = cube.faces['red'][i][2]
-            for i in range(3):
+            for i in range(cube.size):
+                cube.faces['white'][0][i] = cube.faces['orange'][cube.size - 1 - i][0]
+                cube.faces['orange'][cube.size - 1 - i][0] = cube.faces['yellow'][cube.size - 1][cube.size - 1 - i]
+                cube.faces['yellow'][cube.size - 1][cube.size - 1 - i] = cube.faces['red'][i][cube.size - 1]
+            for i in range(cube.size):
                 cube.faces['red'][i][2] = temp[i]
