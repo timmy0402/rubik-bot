@@ -12,22 +12,37 @@ def rotate_90_clockwise(face):
     rotated = [row[::-1] for row in transpose]
     return rotated
 
-def rotate_face(cube, face, clockwise, two_layers, three_layer):
+def rotate_face(cube, face, clockwise, extra_layer):
     if face == "U":
         # Collect rows to be rotated (for U face, row 0)
-        rows = [cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0]]
-        
-        if clockwise:
+        if extra_layer == 0:
+            rows = [cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0]]
+        else:
+            rows = [
+                [cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i]]
+                for i in range(extra_layer + 1)]
+        if clockwise: #Clockwise
             # Clockwise 90-degree rotation
             cube.faces['white'] = rotate_90_clockwise(cube.faces['white'])
             # Clockwise: Rotate the rows to the right
-            cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0] = \
+            if extra_layer:
+                for i in range(0,len(rows)):
+                    cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i] = \
+                rows[i][1], rows[i][2], rows[i][3], rows[i][0]
+            else:
+                cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0] = \
                 rows[1], rows[2], rows[3], rows[0]
-        else:
+            
+        else: #CounterClockwise
             cube.faces['white'] = rotate_90_counterClockwise(cube.faces['white'])
             # Counterclockwise: Rotate the rows to the left
-            cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0] = \
-                rows[-1], rows[0], rows[1], rows[2]
+            if extra_layer:
+                for i in range(0,len(rows)):
+                    cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i] = \
+                rows[i][-1], rows[i][0], rows[i][1], rows[i][2]
+            else:
+                cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i] = \
+                    rows[i][-1], rows[i][0], rows[i][1], rows[i][2]
             
     elif face == "D":
         # Collect rows to be rotated (for D face, row 2)

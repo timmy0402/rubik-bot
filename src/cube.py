@@ -24,8 +24,7 @@ class Cube:
             # default paramenter for single character scramble
             rotations = 1
             clockwise = True
-            two_layer = False
-            three_layer = False
+            extra_layer = 0
             # search for face and special notations
             for element in command:
                 if element in self.sides:
@@ -35,12 +34,12 @@ class Cube:
                 if element == "2":
                     rotations = 2
                 if element == "w":
-                    two_layer = True
+                    extra_layer = 1
                 if element == "3":
-                    three_layer = True
+                    extra_layer = 2
             for _ in range(rotations):
-                rotate_face(self, face, clockwise, two_layer, three_layer)
-                
+                rotate_face(self, face, clockwise, extra_layer)
+
     def print_cube(self):
         def print_face(face):
             for row in face:
@@ -57,3 +56,9 @@ class Cube:
         print_face(self.faces['orange'])
         print("\nYellow (Bottom):")
         print_face(self.faces['yellow'])
+
+# Scramble Cube & draw image
+scramble_string = "Uw'"
+rubik_cube = Cube(size=4)
+rubik_cube.scrambleCube(scramble_string)
+rubik_cube.print_cube()
