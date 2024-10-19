@@ -15,7 +15,7 @@ def rotate_90_clockwise(face):
 def rotate_face(cube, face, clockwise, extra_layer):
     if face == "U":
         # Collect rows to be rotated (for U face, row 0)
-        if extra_layer == 0:
+        if extra_layer == 0: # For bigger cube
             rows = [cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0]]
         else:
             rows = [
@@ -24,40 +24,50 @@ def rotate_face(cube, face, clockwise, extra_layer):
         if clockwise: #Clockwise
             # Clockwise 90-degree rotation
             cube.faces['white'] = rotate_90_clockwise(cube.faces['white'])
-            # Clockwise: Rotate the rows to the right
             if extra_layer > 0:
-                for i in range(0,len(rows)):
+                for i in range(len(rows)):
                     cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i] = \
-                rows[i][1], rows[i][2], rows[i][3], rows[i][0]
+                    rows[i][1], rows[i][2], rows[i][3], rows[i][0]
             else:
                 cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0] = \
                 rows[1], rows[2], rows[3], rows[0]
             
         else: #CounterClockwise
             cube.faces['white'] = rotate_90_counterClockwise(cube.faces['white'])
-            # Counterclockwise: Rotate the rows to the left
             if extra_layer > 0:
-                for i in range(0,len(rows)):
+                for i in range(len(rows)):
                     cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i] = \
-                rows[i][-1], rows[i][0], rows[i][1], rows[i][2]
+                    rows[i][-1], rows[i][0], rows[i][1], rows[i][2]
             else:
                 cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0] = \
-                    rows[-1], rows[0], rows[1], rows[2]
+                rows[-1], rows[0], rows[1], rows[2]
             
     elif face == "D":
         # Collect rows to be rotated (for D face, row 2)
-        if extra_layer == 0:
-            rows = [cube.faces['green'][2], cube.faces['orange'][2], cube.faces['blue'][2], cube.faces['red'][2]]
-        if clockwise:
-            cube.faces['yellow'] = rotate_90_clockwise(cube.faces['yellow'])
-            # Clockwise: Rotate the rows to the right
-            cube.faces['green'][2], cube.faces['orange'][2], cube.faces['blue'][2], cube.faces['red'][2] = \
-                rows[1], rows[2], rows[3], rows[0]
+        if extra_layer == 0: # For bigger cube
+            rows = [cube.faces['green'][cube.size-1], cube.faces['orange'][cube.size-1], cube.faces['blue'][cube.size-1], cube.faces['red'][cube.size-1]]
         else:
+            rows = [
+                [cube.faces['green'][cube.size-1-i], cube.faces['orange'][cube.size-1-i], cube.faces['blue'][cube.size-1-i], cube.faces['red'][cube.size-1-i]]
+                for i in range(extra_layer + 1)]
+        if clockwise: # Clockwise
+            cube.faces['yellow'] = rotate_90_clockwise(cube.faces['yellow'])
+            if extra_layer > 0:
+                for i in range(len(rows)):
+                    cube.faces['green'][cube.size-1-i], cube.faces['orange'][cube.size-1-i], cube.faces['blue'][cube.size-1-i], cube.faces['red'][cube.size-1-i] = \
+                    rows[i][1], rows[i][2], rows[i][3], rows[i][0]
+            else:
+                cube.faces['green'][cube.size-1], cube.faces['orange'][cube.size-1], cube.faces['blue'][cube.size-1], cube.faces['red'][cube.size-1] = \
+                rows[1], rows[2], rows[3], rows[0]
+        else: # CounterClockwise
             cube.faces['yellow'] = rotate_90_counterClockwise(cube.faces['yellow'])
-            # Counterclockwise: Rotate the rows to the left
-            cube.faces['green'][2], cube.faces['orange'][2], cube.faces['blue'][2], cube.faces['red'][2] = \
-                rows[-1], rows[0], rows[1], rows[2]
+            if extra_layer > 0:
+                for i in range(len(rows)):
+                    cube.faces['green'][cube.size-1-i], cube.faces['orange'][cube.size-1-i], cube.faces['blue'][cube.size-1-i], cube.faces['red'][cube.size-1-i] = \
+                        rows[i][-1], rows[i][0], rows[i][1], rows[i][2]
+            else:
+                cube.faces['green'][2], cube.faces['orange'][2], cube.faces['blue'][2], cube.faces['red'][2] = \
+                    rows[-1], rows[0], rows[1], rows[2]
             
     if face == "R":
         if clockwise:

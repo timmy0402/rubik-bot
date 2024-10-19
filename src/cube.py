@@ -58,7 +58,7 @@ class Cube:
         print_face(self.faces['yellow'])
 
 # Scramble Cube & draw image
-scramble_string = "Uw"
+scramble_string = "R U R' U' Dw'"
 rubik_cube = Cube(size=4)
 rubik_cube.scrambleCube(scramble_string)
 rubik_cube.print_cube()
