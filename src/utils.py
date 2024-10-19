@@ -25,7 +25,7 @@ def rotate_face(cube, face, clockwise, extra_layer):
             # Clockwise 90-degree rotation
             cube.faces['white'] = rotate_90_clockwise(cube.faces['white'])
             # Clockwise: Rotate the rows to the right
-            if extra_layer:
+            if extra_layer > 0:
                 for i in range(0,len(rows)):
                     cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i] = \
                 rows[i][1], rows[i][2], rows[i][3], rows[i][0]
@@ -36,21 +36,20 @@ def rotate_face(cube, face, clockwise, extra_layer):
         else: #CounterClockwise
             cube.faces['white'] = rotate_90_counterClockwise(cube.faces['white'])
             # Counterclockwise: Rotate the rows to the left
-            if extra_layer:
+            if extra_layer > 0:
                 for i in range(0,len(rows)):
                     cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i] = \
                 rows[i][-1], rows[i][0], rows[i][1], rows[i][2]
             else:
-                cube.faces['red'][i], cube.faces['blue'][i], cube.faces['orange'][i], cube.faces['green'][i] = \
-                    rows[i][-1], rows[i][0], rows[i][1], rows[i][2]
+                cube.faces['red'][0], cube.faces['blue'][0], cube.faces['orange'][0], cube.faces['green'][0] = \
+                    rows[-1], rows[0], rows[1], rows[2]
             
     elif face == "D":
         # Collect rows to be rotated (for D face, row 2)
-        rows = [cube.faces['green'][2], cube.faces['orange'][2], cube.faces['blue'][2], cube.faces['red'][2]]
-        
+        if extra_layer == 0:
+            rows = [cube.faces['green'][2], cube.faces['orange'][2], cube.faces['blue'][2], cube.faces['red'][2]]
         if clockwise:
             cube.faces['yellow'] = rotate_90_clockwise(cube.faces['yellow'])
-
             # Clockwise: Rotate the rows to the right
             cube.faces['green'][2], cube.faces['orange'][2], cube.faces['blue'][2], cube.faces['red'][2] = \
                 rows[1], rows[2], rows[3], rows[0]
