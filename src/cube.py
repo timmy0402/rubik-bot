@@ -50,15 +50,17 @@ class Cube:
         print_face(self.faces['green'])
         print("\nRed (Right):")
         print_face(self.faces['red'])
-        print("\nBlue (Left):")
+        print("\nBlue (Back):")
         print_face(self.faces['blue'])
-        print("\nOrange (Back):")
+        print("\nOrange (Left):")
         print_face(self.faces['orange'])
         print("\nYellow (Bottom):")
         print_face(self.faces['yellow'])
 
 # Scramble Cube & draw image
-scramble_string = "R U R' U' Dw'"
-rubik_cube = Cube(size=4)
+scramble_string = "F Bw' R' Uw F' B Bw2 Rw' Fw Uw' Bw2 B2 D2 Dw Bw2 F L2 Fw' R2 Fw2 Uw2 R' " \
+                                "Uw F' L' Bw2 Lw' L2 U' Lw D' R U D2 L' Fw' F R2 B Uw2 Dw2 F2 Dw U F' U2 Uw' " \
+                                "Lw2 Bw Uw' Fw' Bw' Dw Bw D2 Dw Fw2 U F2 L'"
+rubik_cube = Cube(size=5)
 rubik_cube.scrambleCube(scramble_string)
 rubik_cube.print_cube()

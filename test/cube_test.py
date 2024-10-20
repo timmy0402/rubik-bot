@@ -81,8 +81,8 @@ class TestCubeMethod(unittest.TestCase):
                                           ['yellow','green']]
         
         self.cube444_1 = Cube(size=4)
-        self.cube444_1_scramble = "L' U' L' R' F L2 F' R2 D F2 D' U' R2 D R2 B2 L2 F' L Rw2 B' " \
-                                "R2 L' D2 B U2 Rw2 Fw2 F2 L' B' Uw' R' Uw2 B2 U' Fw R' L' Uw' U Rw2 F"
+        self.cube444_1_scramble = "L' U' L' R' F L2 F' R2 D F2 D' U' R2 D R2 B2 L2 F' L Rw2 B' R2 L' D2 " \
+                                    "B U2 Rw2 Fw2 F2 L' B' Uw' R' Uw2 B2 U' Fw R' L' Uw' U Rw2 F"
         self.cube444_1.faces['white'] = [['red','white','red','orange'],
                                          ['orange','yellow','blue','orange'],
                                          ['blue','orange','white','green'],
@@ -109,40 +109,40 @@ class TestCubeMethod(unittest.TestCase):
                                           ['white','orange','blue','red']]
 
         self.cube444_2 = Cube(size=4)
-        self.cube444_2_scramble = "L' F' L2 U' L2 D L2 U' R2 D L2 D2 R B D2 F U2 R D2 F Fw2 Rw2 L " \
-                                "D2 L2 Uw2 L B2 Rw2 B F2 R Fw2 D' B2 L' Uw B2 Rw' F2 Uw' R2 Fw2 Rw' B' L2"
-        self.cube444_1.faces['white'] = [['yellow','white','blue','white'],
+        self.cube444_2_scramble = "L' F' L2 U' L2 D L2 U' R2 D L2 D2 R B D2 F U2 R D2 F Fw2 Rw2 L D2 " \
+                                    "L2 Uw2 L B2 Rw2 B F2 R Fw2 D' B2 L' Uw B2 Rw' F2 Uw' R2 Fw2 Rw' B' L2"
+        self.cube444_2.faces['white'] = [['yellow','white','blue','white'],
                                          ['green','red','white','yellow'],
                                          ['orange','orange','green','red'],
                                          ['blue','orange','red','yellow']]
-        self.cube444_1.faces['orange'] = [['green','red','yellow','white'],
+        self.cube444_2.faces['orange'] = [['green','red','yellow','white'],
                                           ['blue','red','orange','white'],
                                           ['blue','green','white','orange'],
                                           ['white','red','blue','blue']]
-        self.cube444_1.faces['green'] = [['red','blue','blue','blue'],
+        self.cube444_2.faces['green'] = [['red','blue','blue','blue'],
                                          ['orange','orange','blue','orange'],
                                          ['green','blue','white','orange'],
                                          ['orange','white','green','orange']]
-        self.cube444_1.faces['red'] = [['red','green','green','blue'], 
+        self.cube444_2.faces['red'] = [['red','green','green','blue'], 
                                        ['white','green','yellow','green'],
                                        ['yellow','orange','blue','green'],
                                        ['green','green','white','green']]
-        self.cube444_1.faces['blue'] = [['orange','orange','blue','red'],
+        self.cube444_2.faces['blue'] = [['orange','orange','blue','red'],
                                         ['white','red','red','yellow'],
                                         ['white','blue','yellow','white'],
                                         ['white','red','red','orange']]
-        self.cube444_1.faces['yellow'] = [['yellow','red','yellow','yellow'],
+        self.cube444_2.faces['yellow'] = [['yellow','red','yellow','yellow'],
                                           ['yellow','yellow','yellow','orange'],
-                                          ['orange','white','green','red'],
+                                          ['yellow','white','green','red'],
                                           ['green','yellow','blue','red']]
         
         self.cube555_1 = Cube(size=5)
         self.cube555_1_scramble = "F Bw' R' Uw F' B Bw2 Rw' Fw Uw' Bw2 B2 D2 Dw Bw2 F L2 Fw' R2 Fw2 Uw2 R' " \
                                 "Uw F' L' Bw2 Lw' L2 U' Lw D' R U D2 L' Fw' F R2 B Uw2 Dw2 F2 Dw U F' U2 Uw' " \
-                                "Lw2 Bw Uw' Fw' Bw' Dw Bw D2 Dw Fw2 U F2 L"
+                                "Lw2 Bw Uw' Fw' Bw' Dw Bw D2 Dw Fw2 U F2 L'"
         self.cube555_1.faces['white'] = [['orange','green','green','yellow','red'],
                                          ['white','red','blue','yellow','yellow'],
-                                         ['white','yellow','white','red','red','red'],
+                                         ['white','yellow','white','red','red'],
                                          ['white','white','white','red','white'],
                                          ['yellow','white','white','yellow','yellow']]
         self.cube555_1.faces['orange'] = [['white','green','red','red','red'],
@@ -182,7 +182,7 @@ class TestCubeMethod(unittest.TestCase):
                                          ['red','yellow','blue','blue','yellow']]
         self.cube555_2.faces['orange'] = [['blue','red','red','red','white'],
                                           ['green','green','blue','orange','orange'],
-                                          ['yellow','white','orange','orange','white'],
+                                          ['yellow','white','orange','orange','yellow'],
                                           ['green','white','red','white','green'],
                                           ['green','yellow','white','yellow','red']]
         self.cube555_2.faces['green'] = [['green','green','white','yellow','orange'],
