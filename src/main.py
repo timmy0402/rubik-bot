@@ -29,6 +29,11 @@ db_manager = DatabaseManager()
 @bot.event
 async def on_ready():
     print(f'We have logged as an {bot.user}')
+    # Uncommented to make database run 24/7
+    #    db_manager.connect()
+    #if not keep_database_alive.is_running():
+    #    print("Starting keep-alive task...")
+    #    keep_database_alive.start()
     await bot.tree.sync()
 
 @bot.event
@@ -49,7 +54,7 @@ async def on_message(message):
 @app_commands.choices(arg=[
     app_commands.Choice(name="2x2", value="2x2"),
     app_commands.Choice(name="3x3", value="3x3"),
-    app_commands.Choice(name="4x4", value="5x5"),
+    app_commands.Choice(name="4x4", value="4x4"),
     app_commands.Choice(name="5x5", value="5x5"),
     app_commands.Choice(name="6x6", value="6x6"),
     app_commands.Choice(name="7x7", value="7x7"),
@@ -61,7 +66,20 @@ async def on_message(message):
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
     if(arg == '2x2'):
-        await interaction.response.send_message(scrambler222.get_WCA_scramble())
+        # Scramble Cube & draw image
+        scramble_string = scrambler222.get_WCA_scramble()
+        rubik_cube = Cube(size=2)
+        rubik_cube.scrambleCube(scramble_string)
+        img_bytes = draw_rubiks_cube(rubik_cube)
+
+        image_filename = "rubiks_cube.png"
+
+        # Upload Image
+        file = discord.File(fp=img_bytes,filename=image_filename)
+        embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
+        embed.set_image(url="attachment://rubiks_cube.png")
+
+        await interaction.response.send_message(embed=embed, file=file)
     elif(arg == '3x3'):
         # Scramble Cube & draw image
         scramble_string = scrambler333.get_WCA_scramble()
@@ -80,12 +98,38 @@ async def scramble(interaction : discord.Interaction, arg: str):
 
     elif(arg == '4x4'):
         await interaction.response.defer()
-        scramble_text = scrambler444.get_WCA_scramble()
-        await interaction.followup.send(scramble_text)
+
+        # Scramble Cube & draw image
+        scramble_string = scrambler444.get_WCA_scramble()
+        rubik_cube = Cube(size=4)
+        rubik_cube.scrambleCube(scramble_string)
+        img_bytes = draw_rubiks_cube(rubik_cube)
+
+        image_filename = "rubiks_cube.png"
+
+        # Upload Image
+        file = discord.File(fp=img_bytes,filename=image_filename)
+        embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
+        embed.set_image(url="attachment://rubiks_cube.png")
+
+        await interaction.followup.send(embed=embed, file=file)
     elif(arg == '5x5'):
         await interaction.response.defer()
-        scramble_text = scrambler555.get_WCA_scramble()
-        await interaction.followup.send(scramble_text)
+
+        # Scramble Cube & draw image
+        scramble_string = scrambler555.get_WCA_scramble()
+        rubik_cube = Cube(size=5)
+        rubik_cube.scrambleCube(scramble_string)
+        img_bytes = draw_rubiks_cube(rubik_cube)
+
+        image_filename = "rubiks_cube.png"
+
+        # Upload Image
+        file = discord.File(fp=img_bytes,filename=image_filename)
+        embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
+        embed.set_image(url="attachment://rubiks_cube.png")
+
+        await interaction.followup.send(embed=embed, file=file)
     elif(arg == '6x6'):
         await interaction.response.defer()
         scramble_text = scrambler666.get_WCA_scramble()
@@ -204,7 +248,12 @@ async def help(interaction : discord.Interaction):
 
     await interaction.response.send_message(embed=embed)
 
+# Uncommented to make DB run 24/7
+#@tasks.loop(minutes=5)
+#async def keep_database_alive():
+#    print("Executing keep-alive query...")
+#    db_manager.keep_alive()
 
 
 
-bot.run(os.getenv('TOKEN'))
+bot.run(os.getenv('TEST_TOKEN'))
