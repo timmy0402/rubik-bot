@@ -60,7 +60,7 @@ class Cube:
         print_face(self.faces['yellow'])
 
 # Scramble Cube & draw image
-scramble_string = "3Fw2"
-rubik_cube = Cube(size=6)
-rubik_cube.scrambleCube(scramble_string)
-rubik_cube.print_cube()
+#scramble_string = "3Fw2"
+#rubik_cube = Cube(size=6)
+#rubik_cube.scrambleCube(scramble_string)
+#rubik_cube.print_cube()
