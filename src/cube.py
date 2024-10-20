@@ -22,6 +22,7 @@ class Cube:
         commandList = scrambleLine.split()
         for command in commandList:
             # default paramenter for single character scramble
+            seen_3 = False # see if 3 exist in the command
             rotations = 1
             clockwise = True
             extra_layer = 0
@@ -33,10 +34,11 @@ class Cube:
                     clockwise = False
                 if element == "2":
                     rotations = 2
-                if element == "w":
+                if element == "w" and not seen_3:
                     extra_layer = 1
                 if element == "3":
                     extra_layer = 2
+                    seen_3 = True
             for _ in range(rotations):
                 rotate_face(self, face, clockwise, extra_layer)
 
@@ -57,3 +59,8 @@ class Cube:
         print("\nYellow (Bottom):")
         print_face(self.faces['yellow'])
 
+# Scramble Cube & draw image
+scramble_string = "3Fw2"
+rubik_cube = Cube(size=6)
+rubik_cube.scrambleCube(scramble_string)
+rubik_cube.print_cube()

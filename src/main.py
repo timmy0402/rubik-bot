@@ -132,11 +132,38 @@ async def scramble(interaction : discord.Interaction, arg: str):
         await interaction.followup.send(embed=embed, file=file)
     elif(arg == '6x6'):
         await interaction.response.defer()
-        scramble_text = scrambler666.get_WCA_scramble()
-        await interaction.followup.send(scramble_text)
+
+        # Scramble Cube & draw image
+        scramble_string = scrambler666.get_WCA_scramble()
+        rubik_cube = Cube(size=6)
+        rubik_cube.scrambleCube(scramble_string)
+        img_bytes = draw_rubiks_cube(rubik_cube)
+
+        image_filename = "rubiks_cube.png"
+
+        # Upload Image
+        file = discord.File(fp=img_bytes,filename=image_filename)
+        embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
+        embed.set_image(url="attachment://rubiks_cube.png")
+
+        await interaction.followup.send(embed=embed, file=file)
     elif(arg == '7x7'):
         await interaction.response.defer()
-        scramble_text = scrambler777.get_WCA_scramble()
+
+        # Scramble Cube & draw image
+        scramble_string = scrambler777.get_WCA_scramble()
+        rubik_cube = Cube(size=7)
+        rubik_cube.scrambleCube(scramble_string)
+        img_bytes = draw_rubiks_cube(rubik_cube)
+
+        image_filename = "rubiks_cube.png"
+
+        # Upload Image
+        file = discord.File(fp=img_bytes,filename=image_filename)
+        embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
+        embed.set_image(url="attachment://rubiks_cube.png")
+
+        await interaction.followup.send(embed=embed, file=file)
         await interaction.followup.send(scramble_text)
     elif(arg == 'pyraminx'):
         await interaction.response.defer()

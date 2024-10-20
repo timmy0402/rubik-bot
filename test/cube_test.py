@@ -248,6 +248,55 @@ class TestCubeMethod(unittest.TestCase):
                                        ['red','white','yellow','blue','orange','blue'],
                                        ['yellow','red','green','orange','green','red'],
                                        ['blue','green','white','yellow','blue','red']]
+        
+        self.cube777 = Cube(size=7)
+        self.cube777_scramble = "L U' F D2 U2 L R2 U F2 3Fw2 B2 Dw' 3Bw Lw2 3Fw' 3Uw2 3Fw Lw2 F2 Bw2 3Bw2 3Rw " \
+                                "R2 F' B' 3Dw2 Fw D B F' 3Lw' Fw' Bw' Uw' F2 Dw 3Lw2 Uw2 Rw 3Dw2 F2 L2 Uw2 Fw' " \
+                                "3Rw B' F2 Dw D 3Lw' L' B2 Fw' F 3Dw Fw 3Lw' 3Rw2 F2 Uw' F' 3Bw Fw Rw' Lw 3Bw' " \
+                                "Uw2 Bw 3Dw F' 3Bw' D Fw2 Dw F Bw' U D2 F Rw D' 3Dw2 F 3Lw2 L 3Bw Dw2 F' " \
+                                "R' D' Dw' 3Uw' R2 Bw 3Lw2 B2 Fw' Uw' L' Uw2"
+        self.cube777.faces['white'] = [['yellow','orange','white','red','blue','white','green'],
+                                       ['red','white','yellow','yellow','yellow','orange','yellow'],
+                                       ['red','orange','blue','red','green','orange','white'],
+                                       ['orange','yellow','red','white','yellow','blue','red'],
+                                       ['red','white','orange','green','white','orange','red'],
+                                       ['green','green','red','green','red','blue','red'],
+                                       ['yellow','white','yellow','white','red','red','green']]
+        self.cube777.faces['orange'] = [['red','yellow','blue','blue','blue','orange','orange'],
+                                       ['yellow','yellow','yellow','red','blue','white','orange'],
+                                       ['white','yellow','orange','green','green','yellow','red'],
+                                       ['white','orange','yellow','orange','yellow','red','white'],
+                                       ['yellow','white','yellow','red','red','green','yellow'],
+                                       ['white','red','orange','white','red','green','blue'],
+                                       ['white','orange','blue','orange','blue','white','orange']]
+        self.cube777.faces['green'] = [['blue','blue','orange','orange','green','white','orange'],
+                                       ['yellow','red','green','orange','green','blue','orange'],
+                                       ['white','yellow','white','white','blue','blue','blue'],
+                                       ['blue','yellow','orange','green','white','orange','green'],
+                                       ['blue','white','orange','green','white','green','yellow'],
+                                       ['white','yellow','orange','white','blue','orange','red'],
+                                       ['blue','blue','orange','yellow','orange','orange','red']]
+        self.cube777.faces['red'] = [['yellow','green','green','yellow','green','blue','yellow'],
+                                       ['blue','white','red','green','white','yellow','blue'],
+                                       ['white','blue','blue','green','red','green','yellow'],
+                                       ['red','red','orange','red','blue','green','orange'],
+                                       ['red','green','orange','orange','green','white','orange'],
+                                       ['white','green','blue','orange','white','orange','green'],
+                                       ['white','green','yellow','green','orange','blue','green']]
+        self.cube777.faces['blue'] = [['red','green','white','white','red','white','blue'],
+                                       ['red','green','orange','blue','blue','orange','red'],
+                                       ['orange','red','green','orange','yellow','orange','green'],
+                                       ['yellow','red','blue','blue','yellow','yellow','green'],
+                                       ['green','orange','red','white','white','white','red'],
+                                       ['red','red','yellow','green','green','blue','orange'],
+                                       ['white','orange','green','red','orange','green','orange']]
+        self.cube777.faces['yellow'] = [['white','red','white','blue','white','green','blue'],
+                                       ['green','yellow','blue','blue','red','blue','yellow'],
+                                       ['orange','white','red','red','yellow','yellow','green'],
+                                       ['green','white','blue','yellow','white','white','yellow'],
+                                       ['yellow','blue','blue','blue','yellow','red','blue'],
+                                       ['blue','red','green','blue','red','white','yellow'],
+                                       ['green','yellow','green','blue','yellow','yellow','red']]
 
     def test_cube_creation(self):
         for i in range(2, 8):
@@ -258,12 +307,12 @@ class TestCubeMethod(unittest.TestCase):
                 self.assertEqual(sample.faces[face], test_face)
 
     def test_cube_scramble_333(self):
-        self._test_scramble(self.cube333_1, self.cube333_1_scramble)
-        self._test_scramble(self.cube333_2, self.cube333_2_scramble)
+       self._test_scramble(self.cube333_1, self.cube333_1_scramble)
+       self._test_scramble(self.cube333_2, self.cube333_2_scramble)
 
     def test_cube_scramble_222(self):
-        self._test_scramble(self.cube222_1, self.cube222_1_scramble)
-        self._test_scramble(self.cube222_2, self.cube222_2_scramble)
+       self._test_scramble(self.cube222_1, self.cube222_1_scramble)
+       self._test_scramble(self.cube222_2, self.cube222_2_scramble)
 
     def test_cube_scramble_444(self):
         self._test_scramble(self.cube444_1, self.cube444_1_scramble)
@@ -276,13 +325,14 @@ class TestCubeMethod(unittest.TestCase):
     def test_cube_scramble_666(self):
         self._test_scramble(self.cube666,self.cube666_scramble)
 
+    def test_cube_scramble_777(self):
+        self._test_scramble(self.cube777,self.cube777_scramble)
+
     def _test_scramble(self, cube, scramble):
         sample = Cube(size=cube.size)
         sample.scrambleCube(scramble)
         for face in sample.faces:
-            print(face)
-            print(sample.faces[face])
-            print(cube.faces[face])
+
             self.assertEqual(sample.faces[face], cube.faces[face])
 
 if __name__ == '__main__':
