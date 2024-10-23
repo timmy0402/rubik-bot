@@ -2,6 +2,8 @@ import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 
+import topgg
+
 import os
 from dotenv import load_dotenv
 
@@ -35,6 +37,12 @@ async def on_ready():
     #    print("Starting keep-alive task...")
     #    keep_database_alive.start()
     await bot.tree.sync()
+
+@bot.event
+async def on_guild_join():
+    client = topgg.DBLClient(token=os.getenv("TOPGG"),bot=bot)
+    await client.post_guild_count(len(bot.guilds))
+    await client.close()
 
 @bot.event
 async def on_disconnect():
