@@ -1,6 +1,7 @@
 import pyodbc
 import os 
 from dotenv import load_dotenv
+import time
 #loading database keys
 load_dotenv()
 server = os.getenv('AZURE_SQL_HOST')
@@ -15,15 +16,23 @@ class DatabaseManager:
         self.cursor = None
 
     def connect(self):
-        try:
-            self.connection = pyodbc.connect(
-                f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=60;'
-            )
-            self.cursor = self.connection.cursor()
-            print('DB connected')
-        except pyodbc.Error as e:
-            print(f"Error connecting to database: {e}")
-            raise e
+        max_attempts = 3  # Maximum number of reconnection attempts
+        for attempt in range(max_attempts):
+            try:
+                self.connection = pyodbc.connect(
+                    f'DRIVER={{ODBC Driver 18 for SQL Server}};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=60;'
+                )
+                self.cursor = self.connection.cursor()
+                print('DB connected')
+                return  # Exit the function if successful
+            except pyodbc.Error as e:
+                print(f"Attempt {attempt + 1} failed: {e}")
+                if attempt < max_attempts - 1:  # Don't wait on the last attempt
+                    print("Waiting for 5 seconds before retrying...")
+                    time.sleep(5)
+
+        print("Error connecting to database after multiple attempts.")
+        raise Exception("Unable to connect to the database.")
             
 
     def close(self):
