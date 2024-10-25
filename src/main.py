@@ -32,10 +32,10 @@ db_manager = DatabaseManager()
 async def on_ready():
     print(f'We have logged as an {bot.user}')
     # Uncommented to make database run 24/7
-    #    db_manager.connect()
-    #if not keep_database_alive.is_running():
-    #    print("Starting keep-alive task...")
-    #    keep_database_alive.start()
+    db_manager.connect()
+    if not keep_database_alive.is_running():
+        print("Starting keep-alive task...")
+        keep_database_alive.start()
     await bot.tree.sync()
 
 @bot.event
@@ -208,7 +208,7 @@ async def stopwatch(interaction: discord.Interaction):
         
         await view.wait()
         await view.disable_all_items()
-    except pyodbc.Error as e:
+    except Exception as e:
         await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
 
 
@@ -236,7 +236,7 @@ async def time(interaction : discord.Interaction):
 
         db_manager.close()
         await interaction.followup.send(embed=embed)
-    except pyodbc.Error as e:
+    except Exception as e:
         await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
         
 
@@ -264,7 +264,7 @@ async def deleteTime(interaction : discord.Interaction,timeid : str):
         db_manager.cursor.commit()
         db_manager.close()
         await interaction.followup.send(f"`{str(timeid)}`" + " is deleted")
-    except pyodbc.Error as e:
+    except Exception as e:
         await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
 
 
@@ -284,11 +284,11 @@ async def help(interaction : discord.Interaction):
     await interaction.response.send_message(embed=embed)
 
 # Uncommented to make DB run 24/7
-#@tasks.loop(minutes=5)
-#async def keep_database_alive():
-#    print("Executing keep-alive query...")
-#    db_manager.keep_alive()
+@tasks.loop(minutes=5)
+async def keep_database_alive():
+    print("Executing keep-alive query...")
+    db_manager.keep_alive()
 
 
 
-bot.run(os.getenv('TOKEN'))
+bot.run(os.getenv('TEST_TOKEN'))
