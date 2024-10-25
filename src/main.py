@@ -291,4 +291,4 @@ async def keep_database_alive():
 
 
 
-bot.run(os.getenv('TEST_TOKEN'))
+bot.run(os.getenv('TOKEN'))
