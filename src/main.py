@@ -17,11 +17,18 @@ from draw import draw_rubiks_cube
 
 from DB_Manager import DatabaseManager
 
+def insertUsageToDB(commandName):
+    try:
+        db_manager.cursor.execute("INSERT INTO CommandLog(CommandName) VALUES(?)",(commandName))
+        db_manager.cursor.commit()
+    except Exception as e:
+        print("Log failed")
+
 load_dotenv()
 
 intents = discord.Intents.default()
 intents.message_content = True
-
+intents.guilds = True
 bot = commands.Bot(command_prefix='/', intents=intents)
 
 cursor = None
@@ -31,6 +38,9 @@ db_manager = DatabaseManager()
 @bot.event
 async def on_ready():
     print(f'We have logged as an {bot.user}')
+    client = topgg.DBLClient(token=os.getenv("TOPGG"),bot=bot)
+    await client.post_guild_count(len(bot.guilds))
+    await client.close()
     # Uncommented to make database run 24/7
     db_manager.connect()
     if not keep_database_alive.is_running():
@@ -39,10 +49,11 @@ async def on_ready():
     await bot.tree.sync()
 
 @bot.event
-async def on_guild_join():
+async def on_guild_join(guild):
     client = topgg.DBLClient(token=os.getenv("TOPGG"),bot=bot)
     await client.post_guild_count(len(bot.guilds))
     await client.close()
+    print("Guild joined")
 
 @bot.event
 async def on_disconnect():
@@ -73,6 +84,9 @@ async def on_message(message):
     app_commands.Choice(name="clock", value="clock")
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
+    # Insert usage information into database
+    insertUsageToDB('scramble')
+
     if(arg == '2x2'):
         # Scramble Cube & draw image
         scramble_string = scrambler222.get_WCA_scramble()
@@ -196,6 +210,9 @@ async def scramble(interaction : discord.Interaction, arg: str):
     
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
 async def stopwatch(interaction: discord.Interaction):
+    # Insert usage information into database
+    insertUsageToDB('stopwatch')
+
     user_id = interaction.user.id
     user = await bot.fetch_user(user_id)
     await interaction.response.defer()
@@ -214,9 +231,10 @@ async def stopwatch(interaction: discord.Interaction):
 
 @bot.tree.command(name="time",description="Display time of your last 10 solves")
 async def time(interaction : discord.Interaction):
+    # Insert usage information into database
+    insertUsageToDB('time')
     await interaction.response.defer()
     try:
-        db_manager.connect()
         user_id = interaction.user.id
         user = await bot.fetch_user(user_id)
         db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
@@ -233,8 +251,6 @@ async def time(interaction : discord.Interaction):
 
         for row in rows:
             embed.add_field(name="", value=f"`{str(row[0]):<10} {str(row[1]):<10}`", inline=False)
-
-        db_manager.close()
         await interaction.followup.send(embed=embed)
     except Exception as e:
         await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
@@ -243,9 +259,10 @@ async def time(interaction : discord.Interaction):
 @bot.tree.command(name="delete_time",description="Delete a time from your solve times")
 @app_commands.describe(timeid="The ID of the time to delete")
 async def deleteTime(interaction : discord.Interaction,timeid : str):
+    # Insert usage information into database
+    insertUsageToDB('deleteTime')
     await interaction.response.defer()
     try:
-        db_manager.connect()
         user_id = interaction.user.id
         db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
         DB_ID = db_manager.cursor.fetchval()
@@ -262,7 +279,6 @@ async def deleteTime(interaction : discord.Interaction,timeid : str):
             return
         db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
         db_manager.cursor.commit()
-        db_manager.close()
         await interaction.followup.send(f"`{str(timeid)}`" + " is deleted")
     except Exception as e:
         await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
@@ -271,6 +287,8 @@ async def deleteTime(interaction : discord.Interaction,timeid : str):
 
 @bot.tree.command(name="help",description="view all command")
 async def help(interaction : discord.Interaction):
+    # Insert usage information into database
+    insertUsageToDB('help')
     embed = discord.Embed(
         title="Help",
         description="Command list",
