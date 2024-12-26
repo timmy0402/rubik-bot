@@ -85,7 +85,7 @@ async def on_message(message):
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
     # Insert usage information into database
-    insertUsageToDB('scramble')
+    #sinsertUsageToDB('scramble')
 
     if(arg == '2x2'):
         # Scramble Cube & draw image
@@ -211,7 +211,7 @@ async def scramble(interaction : discord.Interaction, arg: str):
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
 async def stopwatch(interaction: discord.Interaction):
     # Insert usage information into database
-    insertUsageToDB('stopwatch')
+    #insertUsageToDB('stopwatch')
 
     user_id = interaction.user.id
     user = await bot.fetch_user(user_id)
@@ -232,7 +232,7 @@ async def stopwatch(interaction: discord.Interaction):
 @bot.tree.command(name="time",description="Display time of your last 10 solves")
 async def time(interaction : discord.Interaction):
     # Insert usage information into database
-    insertUsageToDB('time')
+    #insertUsageToDB('time')
     await interaction.response.defer()
     try:
         user_id = interaction.user.id
@@ -260,7 +260,7 @@ async def time(interaction : discord.Interaction):
 @app_commands.describe(timeid="The ID of the time to delete")
 async def deleteTime(interaction : discord.Interaction,timeid : str):
     # Insert usage information into database
-    insertUsageToDB('deleteTime')
+    #insertUsageToDB('deleteTime')
     await interaction.response.defer()
     try:
         user_id = interaction.user.id
@@ -288,7 +288,7 @@ async def deleteTime(interaction : discord.Interaction,timeid : str):
 @bot.tree.command(name="help",description="view all command")
 async def help(interaction : discord.Interaction):
     # Insert usage information into database
-    insertUsageToDB('help')
+    #insertUsageToDB('help')
     embed = discord.Embed(
         title="Help",
         description="Command list",
