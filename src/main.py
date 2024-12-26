@@ -264,6 +264,7 @@ async def deleteTime(interaction : discord.Interaction,timeid : str):
     #insertUsageToDB('deleteTime')
     await interaction.response.defer()
     try:
+        db_manager.connect()
         user_id = interaction.user.id
         db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
         DB_ID = db_manager.cursor.fetchval()
@@ -280,6 +281,7 @@ async def deleteTime(interaction : discord.Interaction,timeid : str):
             return
         db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
         db_manager.cursor.commit()
+        db_manager.close()
         await interaction.followup.send(f"`{str(timeid)}`" + " is deleted")
     except Exception as e:
         await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
