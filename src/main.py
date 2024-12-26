@@ -235,6 +235,7 @@ async def time(interaction : discord.Interaction):
     #insertUsageToDB('time')
     await interaction.response.defer()
     try:
+        db_manager.connect()
         user_id = interaction.user.id
         user = await bot.fetch_user(user_id)
         db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
@@ -248,7 +249,7 @@ async def time(interaction : discord.Interaction):
         )
         embed.add_field(name="TimeID", value="", inline=True)
         embed.add_field(name="SolveTimes", value="", inline=True)
-
+        db_manager.close()
         for row in rows:
             embed.add_field(name="", value=f"`{str(row[0]):<10} {str(row[1]):<10}`", inline=False)
         await interaction.followup.send(embed=embed)
