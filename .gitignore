@@ -2,6 +2,7 @@
 test.py
 __pycache__/
 *.pdf
-*.txt
+testCommand.txt
+output.txt
 commands.json
 CommandsRegister/

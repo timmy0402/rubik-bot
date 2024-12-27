@@ -19,8 +19,10 @@ from DB_Manager import DatabaseManager
 
 def insertUsageToDB(commandName):
     try:
+        db_manager.connect()
         db_manager.cursor.execute("INSERT INTO CommandLog(CommandName) VALUES(?)",(commandName))
         db_manager.cursor.commit()
+        db_manager.close()
     except Exception as e:
         print("Log failed")
 
@@ -233,7 +235,7 @@ async def stopwatch(interaction: discord.Interaction):
 async def time(interaction : discord.Interaction):
     # Insert usage information into database
     #insertUsageToDB('time')
-    await interaction.response.defer()
+    await interaction.response.defer(thinking=True)
     try:
         db_manager.connect()
         user_id = interaction.user.id
@@ -242,49 +244,85 @@ async def time(interaction : discord.Interaction):
         DB_ID = db_manager.cursor.fetchval()
         db_manager.cursor.execute('SELECT TimeID, SolveTime FROM SolveTimes WHERE UserID=? ORDER BY TimeID DESC',(DB_ID))
         rows = db_manager.cursor.fetchall()
+        # will return [(timeid, Decimal('solveTime')), (timeid1, Decimal('solveTime1'))]
+        db_manager.close()
+
+        # Create embed respond
         embed = discord.Embed(
             title= str(user.name) + "'s solve times: ",
             description="Your last 10 solve times",
             color=discord.Color.blue()
         )
-        embed.add_field(name="TimeID", value="", inline=True)
-        embed.add_field(name="SolveTimes", value="", inline=True)
-        db_manager.close()
-        for row in rows:
-            embed.add_field(name="", value=f"`{str(row[0]):<10} {str(row[1]):<10}`", inline=False)
+        # Prepare fields for embed
+        time_ids = "\n".join([str(row[0]) for row in rows])
+        solve_times = "\n".join([f"{row[1]:.02f}" for row in rows])
+
+        # Added fields
+        embed.add_field(name="TimeID", value=time_ids, inline=True)
+        embed.add_field(name="SolveTimes", value=solve_times, inline=True)
+       
         await interaction.followup.send(embed=embed)
+    except discord.errors.NotFound:
+        # Handle expired interaction
+        if interaction.channel:
+            await interaction.channel.send("The interaction has expired. Please try the command again.")
     except Exception as e:
         await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
         
 
 @bot.tree.command(name="delete_time",description="Delete a time from your solve times")
 @app_commands.describe(timeid="The ID of the time to delete")
-async def deleteTime(interaction : discord.Interaction,timeid : str):
-    # Insert usage information into database
-    #insertUsageToDB('deleteTime')
-    await interaction.response.defer()
+async def deleteTime(interaction: discord.Interaction, timeid: str):
+    # Defer immediately to prevent interaction timeout
+    await interaction.response.defer(thinking=True)
+    print("Deferred, entering db")
+
     try:
+        # Connect to the database
         db_manager.connect()
+
+        # Get the user ID from Discord interaction
         user_id = interaction.user.id
         db_manager.cursor.execute('SELECT UserID FROM Users WHERE DiscordID = ?', (user_id,))
         DB_ID = db_manager.cursor.fetchval()
+
+        # If no user ID is found, respond and stop
         if not DB_ID:
-            await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
+            await interaction.followup.send("You don't have any recorded times yet. Use the stopwatch to add some.")
+            db_manager.close()
             return
-        db_manager.cursor.execute('SELECT UserID FROM SolveTimes WHERE TimeID = ?',(timeid))
+
+        # Check if the provided TimeID exists in the SolveTimes table
+        db_manager.cursor.execute('SELECT UserID FROM SolveTimes WHERE TimeID = ?', (timeid,))
         temp_id = db_manager.cursor.fetchval()
+
         if not temp_id:
-            await interaction.response.send_message("You don't have a time yet, use stopwatch to add some")
+            await interaction.followup.send("This TimeID doesn't exist. Please check the ID and try again.")
+            db_manager.close()
             return
+
+        # If the time does not belong to the user, respond with an error
         if temp_id != DB_ID:
-            await interaction.response.send_message("This is not your time, try a different one")
+            await interaction.followup.send("This is not your time. Please try a different one.")
+            db_manager.close()
             return
-        db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?',(timeid))
-        db_manager.cursor.commit()
+
+        # Delete the time entry from the database
+        db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?', (timeid,))
+        db_manager.commit()
         db_manager.close()
-        await interaction.followup.send(f"`{str(timeid)}`" + " is deleted")
+
+        # Send confirmation message
+        await interaction.followup.send(f"Time with ID `{timeid}` has been successfully deleted.")
+
+    except discord.errors.NotFound:
+        # Handle expired interaction if the user takes too long
+        if interaction.channel:
+            await interaction.channel.send("The interaction has expired. Please try again.")
     except Exception as e:
-        await interaction.followup.send("Database Inactive. Try again in 5-20 seconds")
+        # Catch any other errors
+        await interaction.followup.send("An error occurred while processing your request. Please try again later.")
+        print(f"Error in delete_time: {e}")
 
 
 
@@ -302,7 +340,7 @@ async def help(interaction : discord.Interaction):
     embed.add_field(name="time",value="Show the time for your last 10 solves",inline=False)
     embed.add_field(name="delete_time",value="Delete a time by TimeID",inline=False)
 
-    await interaction.response.send_message(embed=embed)
+    await interaction.followup.send(embed=embed)
 
 # Uncommented to make DB run 24/7
 @tasks.loop(minutes=5)
