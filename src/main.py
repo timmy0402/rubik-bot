@@ -86,8 +86,10 @@ async def on_message(message):
     app_commands.Choice(name="clock", value="clock")
 ])
 async def scramble(interaction : discord.Interaction, arg: str):
+    await interaction.response.defer()
+    
     # Insert usage information into database
-    #sinsertUsageToDB('scramble')
+    insertUsageToDB('scramble')
 
     if(arg == '2x2'):
         # Scramble Cube & draw image
@@ -103,7 +105,7 @@ async def scramble(interaction : discord.Interaction, arg: str):
         embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
         embed.set_image(url="attachment://rubiks_cube.png")
 
-        await interaction.response.send_message(embed=embed, file=file)
+        await interaction.followup.send(embed=embed, file=file)
     elif(arg == '3x3'):
         # Scramble Cube & draw image
         scramble_string = scrambler333.get_WCA_scramble()
@@ -118,11 +120,9 @@ async def scramble(interaction : discord.Interaction, arg: str):
         embed = discord.Embed(title="Your scramble", description=scramble_string,color=0x0099FF)
         embed.set_image(url="attachment://rubiks_cube.png")
 
-        await interaction.response.send_message(embed=embed, file=file)
+        await interaction.followup.send(embed=embed, file=file)
 
     elif(arg == '4x4'):
-        await interaction.response.defer()
-
         # Scramble Cube & draw image
         scramble_string = scrambler444.get_WCA_scramble()
         rubik_cube = Cube(size=4)
@@ -138,8 +138,6 @@ async def scramble(interaction : discord.Interaction, arg: str):
 
         await interaction.followup.send(embed=embed, file=file)
     elif(arg == '5x5'):
-        await interaction.response.defer()
-
         # Scramble Cube & draw image
         scramble_string = scrambler555.get_WCA_scramble()
         rubik_cube = Cube(size=5)
@@ -155,8 +153,6 @@ async def scramble(interaction : discord.Interaction, arg: str):
 
         await interaction.followup.send(embed=embed, file=file)
     elif(arg == '6x6'):
-        await interaction.response.defer()
-
         # Scramble Cube & draw image
         scramble_string = scrambler666.get_WCA_scramble()
         rubik_cube = Cube(size=6)
@@ -172,8 +168,6 @@ async def scramble(interaction : discord.Interaction, arg: str):
 
         await interaction.followup.send(embed=embed, file=file)
     elif(arg == '7x7'):
-        await interaction.response.defer()
-
         # Scramble Cube & draw image
         scramble_string = scrambler777.get_WCA_scramble()
         rubik_cube = Cube(size=7)
@@ -190,34 +184,30 @@ async def scramble(interaction : discord.Interaction, arg: str):
         await interaction.followup.send(embed=embed, file=file)
         await interaction.followup.send(scramble_text)
     elif(arg == 'pyraminx'):
-        await interaction.response.defer()
         scramble_text = pyraminxScrambler.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     elif(arg == 'megaminx'):
-        await interaction.response.defer()
         scramble_text = megaminxScrambler.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     elif(arg == 'clock'):
-        await interaction.response.defer()
         scramble_text = clockScrambler.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     elif(arg == 'square1'):
-        await interaction.response.defer()
         scramble_text = squareOneScrambler.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     elif(arg == 'skewb'):
-        await interaction.response.defer()
         scramble_text = skewbScrambler.get_WCA_scramble()
         await interaction.followup.send(scramble_text)
     
 @bot.tree.command(name="stopwatch",description="Time your own solve with timer")
 async def stopwatch(interaction: discord.Interaction):
-    # Insert usage information into database
-    #insertUsageToDB('stopwatch')
-
     user_id = interaction.user.id
     user = await bot.fetch_user(user_id)
+
     await interaction.response.defer()
+
+    # Insert usage information into database
+    insertUsageToDB('stopwatch')
     try:
         view = timer.TimerView(timeout=90,user_id=user_id,userName=user.name)        
         await interaction.followup.send("Click a button to start or stop the timer.", view=view)
@@ -233,9 +223,10 @@ async def stopwatch(interaction: discord.Interaction):
 
 @bot.tree.command(name="time",description="Display time of your last 10 solves")
 async def time(interaction : discord.Interaction):
-    # Insert usage information into database
-    #insertUsageToDB('time')
     await interaction.response.defer(thinking=True)
+
+    # Insert usage information into database
+    insertUsageToDB('time')
     try:
         db_manager.connect()
         user_id = interaction.user.id
@@ -275,8 +266,9 @@ async def time(interaction : discord.Interaction):
 async def deleteTime(interaction: discord.Interaction, timeid: str):
     # Defer immediately to prevent interaction timeout
     await interaction.response.defer(thinking=True)
-    print("Deferred, entering db")
 
+    # Insert usage information into database
+    insertUsageToDB('delete_time')
     try:
         # Connect to the database
         db_manager.connect()
@@ -309,7 +301,7 @@ async def deleteTime(interaction: discord.Interaction, timeid: str):
 
         # Delete the time entry from the database
         db_manager.cursor.execute('DELETE FROM SolveTimes WHERE TimeID = ?', (timeid,))
-        db_manager.commit()
+        db_manager.cursor.commit()
         db_manager.close()
 
         # Send confirmation message
@@ -328,8 +320,11 @@ async def deleteTime(interaction: discord.Interaction, timeid: str):
 
 @bot.tree.command(name="help",description="view all command")
 async def help(interaction : discord.Interaction):
+    await interaction.response.defer()
+
     # Insert usage information into database
-    #insertUsageToDB('help')
+    insertUsageToDB('help')
+
     embed = discord.Embed(
         title="Help",
         description="Command list",
