@@ -1,6 +1,6 @@
 discord.py
 python-dotenv
-pyTwistyScrambler
 Pillow
 pyodbc
 topggpy
+requests
