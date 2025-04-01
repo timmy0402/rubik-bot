@@ -45,24 +45,14 @@ db_manager = DatabaseManager()
 @bot.event
 async def on_ready():
     print(f"We have logged as an {bot.user}")
-    client = topgg.DBLClient(token=os.getenv("topgg"), bot=bot)
+    client = topgg.DBLClient(token=os.getenv("topgg"), bot=bot, autopost=True)
     print("TOPGG number updated")
-    await client.post_guild_count(len(bot.guilds))
-    await client.close()
     # Uncommented to make database run 24/7
     db_manager.connect()
     if not keep_database_alive.is_running():
         print("Starting keep-alive task...")
         keep_database_alive.start()
     await bot.tree.sync()
-
-
-@bot.event
-async def on_guild_join(guild):
-    client = topgg.DBLClient(token=os.getenv("topgg"), bot=bot)
-    await client.post_guild_count(len(bot.guilds))
-    await client.close()
-    print("Guild joined")
 
 
 @bot.event
