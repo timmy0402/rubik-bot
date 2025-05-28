@@ -12,4 +12,4 @@ Show the time for your last 10 solves
 /delete_time
 Delete a time by TimeID
 
-[![Discord Bots](https://top.gg/api/widget/1197268536918278236.svg)(https://top.gg/bot/1197268536918278236)
+[![](https://discordbotlist.com/api/v1/bots/1197268536918278236/widget)](https://discordbotlist.com/bots/cube-crafter)
