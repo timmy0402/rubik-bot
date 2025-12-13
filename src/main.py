@@ -2,8 +2,6 @@ import discord
 from discord.ext import commands, tasks
 from discord import app_commands
 
-import topgg
-
 import os
 from dotenv import load_dotenv
 
@@ -45,13 +43,17 @@ db_manager = DatabaseManager()
 @bot.event
 async def on_ready():
     print(f"We have logged as an {bot.user}")
-    client = topgg.DBLClient(token=os.getenv("topgg"), bot=bot, autopost=True)
-    print("TOPGG number updated")
     # Uncommented to make database run 24/7
     db_manager.connect()
     if not keep_database_alive.is_running():
         print("Starting keep-alive task...")
         keep_database_alive.start()
+    if not update_topgg.is_running():
+        print("Starting updating topgg...")
+        update_topgg.start()
+    if not update_discordbotlist.is_running():
+        print("Starting updating discordbotlist...")
+        update_discordbotlist.start()
     await bot.tree.sync()
 
 
@@ -306,6 +308,45 @@ async def help(interaction: discord.Interaction):
 async def keep_database_alive():
     print("Executing keep-alive query...")
     db_manager.keep_alive()
+
+
+# Updating TopGG count every hour
+@tasks.loop(minutes=60)
+async def update_topgg():
+    servers = len(bot.guilds)
+    id = os.getenv("APPLICATION_ID")
+    token = os.getenv("TOPGG_TOKEN")
+    url = f"https://top.gg/api/bots/{id}/stats"
+    params = {"server_count": servers}
+    headers = {"Authorization": token}
+
+    try:
+        response = requests.post(url, json=params, headers=headers)
+        if response.status_code == 200:
+            print(f"Posted server count ({servers}) to Top.gg")
+        else:
+            print(f"Failed to post to Top.gg: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Error posting to Top.gg: {e}")
+
+
+@tasks.loop(minutes=1)
+async def update_discordbotlist():
+    servers = len(bot.guilds)
+    id = os.getenv("APPLICATION_ID")
+    token = os.getenv("BOTLIST_TOKEN")
+    url = f"https://discordbotlist.com/api/v1/bots/{id}/stats"
+    params = {"guilds": servers}
+    headers = {"Authorization": token}
+
+    try:
+        response = requests.post(url, json=params, headers=headers)
+        if response.status_code == 200 or response.status_code == 204:
+            print(f"Posted server count ({servers}) to DBL")
+        else:
+            print(f"Failed to post to DBL: {response.status_code} - {response.text}")
+    except Exception as e:
+        print(f"Error posting to DBL: {e}")
 
 
 bot.run(os.getenv("TOKEN"))
