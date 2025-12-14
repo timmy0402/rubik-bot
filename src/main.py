@@ -330,7 +330,7 @@ async def update_topgg():
         print(f"Error posting to Top.gg: {e}")
 
 
-@tasks.loop(minutes=1)
+@tasks.loop(minutes=60)
 async def update_discordbotlist():
     servers = len(bot.guilds)
     id = os.getenv("APPLICATION_ID")
