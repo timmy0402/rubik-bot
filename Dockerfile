@@ -1,36 +1,55 @@
-# Use an official Python runtime as a parent image
-FROM python:3.11-slim
+# Stage 1: Builder
+# Used to compile dependencies and install build tools
+FROM python:3.11-slim as builder
 
-# Set the working directory in the container
 WORKDIR /app
 
-COPY requirements.txt .
-# Copy the contents of the src directory into the container at /app
-COPY src/ .
-
-# ODBC Dependencies
+# Install build dependencies
+# unixodbc-dev is required for pyodbc compilation
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends build-essential \
+    apt-get install -y --no-install-recommends \
+    build-essential \
     curl \
-    apt-utils \
-    gnupg2 &&\
-    rm -rf /var/lib/apt/lists/* && \
-    pip install --upgrade pip
+    gnupg2 \
+    unixodbc-dev \
+    apt-utils
 
-# Microsoft SQL Server ODBC Driver Installation
-RUN curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
-RUN curl https://packages.microsoft.com/config/debian/12/prod.list | tee /etc/apt/sources.list.d/mssql-release.list
-
-RUN apt-get update
-RUN env ACCEPT_EULA=Y apt-get install -y msodbcsql18
+# Install Python dependencies to a specific prefix for easy copying
+COPY requirements.txt .
+RUN pip install --upgrade pip && \
+    pip install --prefix=/install --no-cache-dir -r requirements.txt
 
 
-COPY /odbc.ini / 
+# Stage 2: Runtime
+# Minimal image for production
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Install only runtime dependencies
+# msodbcsql18 requires curl/gnupg for repo setup, but we clean up apt cache
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    curl \
+    gnupg2 \
+    unixodbc && \
+    curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg && \
+    curl https://packages.microsoft.com/config/debian/12/prod.list | tee /etc/apt/sources.list.d/mssql-release.list && \
+    apt-get update && \
+    env ACCEPT_EULA=Y apt-get install -y msodbcsql18 && \
+    # Cleanup to keep layer size down
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+# Copy installed python dependencies from builder
+COPY --from=builder /install /usr/local
+
+# Copy ODBC configuration
+COPY odbc.ini /
 RUN odbcinst -i -s -f /odbc.ini -l
 RUN cat /etc/odbc.ini
 
-# Install any needed packages specified in requirements.txt
-RUN pip install --no-cache-dir -r requirements.txt
+# Copy application code
+COPY src/ .
 
-# Run main.py when the container launches
 CMD ["python", "main.py"]

@@ -1,3 +1,12 @@
 __pycache__
 *.pdf
-testCommand.txtdic
+*.md
+./src/cube.py
+./src/draw.py
+.git
+.github
+.gitignore
+venv
+cube
+test
+Dockerfile
