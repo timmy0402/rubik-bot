@@ -13,6 +13,7 @@ import io
 
 import timer
 
+from algorithms import AlgorithmsView
 from DB_Manager import DatabaseManager
 
 
@@ -134,6 +135,99 @@ async def scramble(interaction: discord.Interaction, arg: str):
         embed.set_image(url="attachment://rubiks_cube.png")
 
         await interaction.followup.send(embed=embed, file=file)
+
+
+@bot.tree.command(name="oll", description="View all OLL algorithms")
+@app_commands.choices(
+    arg=[
+        app_commands.Choice(name="Awkward Shape", value="Awkward Shape"),
+        app_commands.Choice(name="Big Lightning Bolt", value="Big Lightning Bolt"),
+        app_commands.Choice(name="C Shape", value="C Shape"),
+        app_commands.Choice(name="Corners Oriented", value="Corners Oriented"),
+        app_commands.Choice(name="Cross", value="Cross"),
+        app_commands.Choice(name="Dot", value="Dot"),
+        app_commands.Choice(name="Fish Shape", value="Fish Shape"),
+        app_commands.Choice(name="I Shape", value="I Shape"),
+        app_commands.Choice(name="P Shape", value="P Shape"),
+        app_commands.Choice(name="Small L Shape", value="Small L Shape"),
+        app_commands.Choice(name="Small Lightning Bolt", value="Small Lightning Bolt"),
+        app_commands.Choice(name="W Shape", value="W Shape"),
+        app_commands.Choice(name="T Shape", value="T Shape"),
+    ]
+)
+async def oll(interaction: discord.Interaction, arg: str = None):
+    """
+    Shows a list of OLL algorithms in an interactive view.
+
+    Parameters
+    -----------
+    interaction: discord.Interaction
+        The interaction object.
+    arg: str
+        Optional. Valid OLL Group to jump to.
+    """
+    await interaction.response.defer()
+
+    insertUsageToDB("oll")
+
+    # Instantiate AlgorithmsView with initial group if arg provided
+    algo_view = AlgorithmsView(
+        mode="oll",
+        user_id=interaction.user.id,
+        userName=interaction.user.name,
+        initial_group=arg,
+    )
+
+    if arg and arg not in algo_view.OLL_GROUPS:
+        await interaction.followup.send(f"Unknown group: {arg}")
+        return
+
+    # Update buttons state initially
+    algo_view.update_buttons()
+    embed = algo_view.get_embed()
+
+    await interaction.followup.send(embed=embed, view=algo_view)
+
+
+@bot.tree.command(name="pll", description="View all PLL algorithms")
+@app_commands.describe(arg="Optional: Jump to a specific group")
+@app_commands.choices(
+    arg=[
+        app_commands.Choice(name="Adjacent Corner Swap", value="Adjacent Corner Swap"),
+        app_commands.Choice(name="Diagonal Corner Swap", value="Diagonal Corner Swap"),
+        app_commands.Choice(name="Edges Only", value="Edges Only"),
+    ]
+)
+async def pll(interaction: discord.Interaction, arg: str = None):
+    """
+    Shows a list of PLL algorithms in an interactive view.
+
+    Parameters
+    -----------
+    interaction: discord.Interaction
+        The interaction object.
+    arg: str
+        Optional. Valid PLL Group to jump to.
+    """
+    await interaction.response.defer()
+    insertUsageToDB("pll")
+
+    algo_view = AlgorithmsView(
+        mode="pll",
+        user_id=interaction.user.id,
+        userName=interaction.user.name,
+        initial_group=arg,
+    )
+
+    if arg and arg not in algo_view.PLL:
+        await interaction.followup.send(f"Unknown group: {arg}")
+        return
+
+    # Update buttons state initially
+    algo_view.update_buttons()
+    embed = algo_view.get_embed()
+
+    await interaction.followup.send(embed=embed, view=algo_view)
 
 
 @bot.tree.command(name="stopwatch", description="Time your own solve with timer")
@@ -313,6 +407,8 @@ async def keep_database_alive():
 # Updating TopGG count every hour
 @tasks.loop(minutes=60)
 async def update_topgg():
+    if os.getenv("ENV", "").upper() != "PROD":
+        return
     servers = len(bot.guilds)
     id = os.getenv("APPLICATION_ID")
     token = os.getenv("TOPGG_TOKEN")
@@ -332,6 +428,8 @@ async def update_topgg():
 
 @tasks.loop(minutes=60)
 async def update_discordbotlist():
+    if os.getenv("ENV", "").upper() != "PROD":
+        return
     servers = len(bot.guilds)
     id = os.getenv("APPLICATION_ID")
     token = os.getenv("BOTLIST_TOKEN")
@@ -349,4 +447,8 @@ async def update_discordbotlist():
         print(f"Error posting to DBL: {e}")
 
 
-bot.run(os.getenv("TOKEN"))
+if os.getenv("ENV", "").upper() == "PROD":
+    token = os.getenv("TOKEN")
+else:
+    token = os.getenv("TEST_TOKEN")
+bot.run(token)
