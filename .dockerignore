@@ -10,3 +10,6 @@ venv
 cube
 test
 Dockerfile
+./src/data/images
+./src/scripts
+./src/tests

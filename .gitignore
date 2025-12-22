@@ -8,3 +8,5 @@ commands.json
 CommandsRegister/
 cube/
 /venv
+src/data/images
+/test

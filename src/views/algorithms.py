@@ -1,6 +1,8 @@
 import discord
 import json
 import os
+from azure.storage.blob import BlobServiceClient
+from paths import DATA_DIR
 
 
 class AlgorithmsView(discord.ui.View):
@@ -66,22 +68,17 @@ class AlgorithmsView(discord.ui.View):
         }
 
         # Load data
-        current_dir = os.path.dirname(os.path.abspath(__file__))
-        json_path = os.path.join(current_dir, "data", "algorithms.json")
+        # Use DATA_DIR from paths.py for absolute path
+        json_path = DATA_DIR / "algorithms.json"
 
         try:
             with open(json_path, "r") as f:
                 self.alg_data = json.load(f)
         except FileNotFoundError:
-            # Fallback if running from root
-            json_path = os.path.join("src", "data", "algorithms.json")
-            try:
-                with open(json_path, "r") as f:
-                    self.alg_data = json.load(f)
-            except Exception as e:
-                print(f"Error loading algo json: {e}")
-                self.alg_data = {}
-                return
+            # Fallback
+            print("Could not find algorithms.json")
+            self.alg_data = {}
+            return
 
         # Setup Select Menu
         self.setup_select_menu()
