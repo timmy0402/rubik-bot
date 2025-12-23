@@ -3,6 +3,9 @@ import json
 import os
 from azure.storage.blob import BlobServiceClient
 from paths import DATA_DIR
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class AlgorithmsView(discord.ui.View):
@@ -83,7 +86,7 @@ class AlgorithmsView(discord.ui.View):
                 self.alg_data = json.load(f)
         except FileNotFoundError:
             # Fallback
-            print("Could not find algorithms.json")
+            logger.error("Could not find algorithms.json")
             self.alg_data = {}
             return
 
@@ -187,7 +190,7 @@ class AlgorithmsView(discord.ui.View):
                     stream.seek(0)
                     self.add_image(alg_id, stream)
                 except Exception as e:
-                    print(f"Error loading image for {blob_name}: {e}")
+                    logger.error(f"Error loading image for {blob_name}: {e}")
 
         self.current_page = 0
 

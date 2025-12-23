@@ -42,28 +42,3 @@ class Cube:
                     seen_3 = True
             for _ in range(rotations):
                 rotate_face(self, face, clockwise, extra_layer)
-
-    def print_cube(self):
-        def print_face(face):
-            for row in face:
-                print(" ".join(row))
-
-        print("White (Top):")
-        print_face(self.faces["white"])
-        print("\nGreen (Front):")
-        print_face(self.faces["green"])
-        print("\nRed (Right):")
-        print_face(self.faces["red"])
-        print("\nBlue (Back):")
-        print_face(self.faces["blue"])
-        print("\nOrange (Left):")
-        print_face(self.faces["orange"])
-        print("\nYellow (Bottom):")
-        print_face(self.faces["yellow"])
-
-
-# Scramble Cube & draw image
-# scramble_string = "3Fw2"
-# rubik_cube = Cube(size=6)
-# rubik_cube.scrambleCube(scramble_string)
-# rubik_cube.print_cube()

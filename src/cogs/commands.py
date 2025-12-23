@@ -11,8 +11,11 @@ from views.timer import TimerView
 from azure.storage.blob import BlobServiceClient
 import os
 from dotenv import load_dotenv
+import logging
 
 load_dotenv()
+
+logger = logging.getLogger(__name__)
 
 
 class RubiksCommands(commands.Cog):
@@ -38,8 +41,9 @@ class RubiksCommands(commands.Cog):
             )
             self.bot.db_manager.cursor.commit()
             self.bot.db_manager.close()
+            self.bot.db_manager.close()
         except Exception as e:
-            print(f"Log usage failed: {e}")
+            logger.error(f"Log usage failed: {e}")
 
     @app_commands.command(name="scramble", description="Scramble")
     @app_commands.describe(arg="Choose the scramble type")
@@ -60,7 +64,7 @@ class RubiksCommands(commands.Cog):
     )
     async def scramble(self, interaction: discord.Interaction, arg: str):
         if interaction.response.is_done():
-            print("Interaction already responded to.")
+            logger.warning("Interaction already responded to.")
         else:
             await interaction.response.defer()
 
@@ -70,9 +74,9 @@ class RubiksCommands(commands.Cog):
             url = "https://scrambler-api-apim.azure-api.net/scrambler-api/GetScramble"
             params = {"puzzle": arg}
 
-            print("Getting scramble")
+            logger.info("Getting scramble")
             response = requests.get(url=url, params=params)
-            print("Connection code: " + str(response.status_code))
+            logger.info("Connection code: " + str(response.status_code))
             response = response.json()
 
             scramble_string = response["scramble"]
@@ -350,7 +354,7 @@ class RubiksCommands(commands.Cog):
             await interaction.followup.send(
                 "An error occurred while processing your request. Please try again later."
             )
-            print(f"Error in delete_time: {e}")
+            logger.error(f"Error in delete_time: {e}")
 
     @app_commands.command(name="help", description="view all command")
     async def help(self, interaction: discord.Interaction):

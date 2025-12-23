@@ -4,6 +4,9 @@ from database.DB_Manager import DatabaseManager
 from azure.storage.blob import BlobServiceClient
 import os
 import requests
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class RubiksBot(commands.Bot):
@@ -25,19 +28,19 @@ class RubiksBot(commands.Bot):
 
         # Start background tasks
         if not self.keep_database_alive.is_running():
-            print("Starting keep-alive task...")
+            logger.info("Starting keep-alive task...")
             self.keep_database_alive.start()
 
         if not self.update_topgg.is_running():
-            print("Starting updating topgg...")
+            logger.info("Starting updating topgg...")
             self.update_topgg.start()
 
         if not self.update_discordbotlist.is_running():
-            print("Starting updating discordbotlist...")
+            logger.info("Starting updating discordbotlist...")
             self.update_discordbotlist.start()
 
     async def on_ready(self):
-        print(f"We have logged as an {self.user}")
+        logger.info(f"We have logged as an {self.user}")
         # Connect to database
         self.db_manager.connect()
 
@@ -53,7 +56,7 @@ class RubiksBot(commands.Bot):
 
     @tasks.loop(minutes=5)
     async def keep_database_alive(self):
-        print("Executing keep-alive query...")
+        logger.debug("Executing keep-alive query...")
         self.db_manager.keep_alive()
 
     @tasks.loop(minutes=60)
@@ -70,13 +73,13 @@ class RubiksBot(commands.Bot):
         try:
             response = requests.post(url, json=params, headers=headers)
             if response.status_code == 200:
-                print(f"Posted server count ({servers}) to Top.gg")
+                logger.info(f"Posted server count ({servers}) to Top.gg")
             else:
-                print(
+                logger.error(
                     f"Failed to post to Top.gg: {response.status_code} - {response.text}"
                 )
         except Exception as e:
-            print(f"Error posting to Top.gg: {e}")
+            logger.error(f"Error posting to Top.gg: {e}")
 
     @tasks.loop(minutes=60)
     async def update_discordbotlist(self):
@@ -92,10 +95,10 @@ class RubiksBot(commands.Bot):
         try:
             response = requests.post(url, json=params, headers=headers)
             if response.status_code == 200 or response.status_code == 204:
-                print(f"Posted server count ({servers}) to DBL")
+                logger.info(f"Posted server count ({servers}) to DBL")
             else:
-                print(
+                logger.error(
                     f"Failed to post to DBL: {response.status_code} - {response.text}"
                 )
         except Exception as e:
-            print(f"Error posting to DBL: {e}")
+            logger.error(f"Error posting to DBL: {e}")
