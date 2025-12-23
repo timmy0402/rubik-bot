@@ -15,17 +15,6 @@ class RubiksBot(commands.Bot):
 
         self.db_manager = DatabaseManager()
 
-        account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
-        access_key = os.getenv("AZURE_STORAGE_ACCESS_KEY")
-
-        # Initialize blob service client
-        if account_url and access_key:
-            self.blob_service_client = BlobServiceClient(
-                account_url=account_url, credential=access_key
-            )
-        else:
-            self.blob_service_client = None
-
     async def setup_hook(self):
         # Add the Cog
         from cogs.commands import RubiksCommands

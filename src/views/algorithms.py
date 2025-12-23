@@ -14,6 +14,8 @@ class AlgorithmsView(discord.ui.View):
         user_id,
         userName,
         initial_group=None,
+        blob_service_client=None,
+        container=None,
     ):
         """
         Initialize the AlgorithmsView.
@@ -24,6 +26,8 @@ class AlgorithmsView(discord.ui.View):
             user_id (int): The ID of the user who initiated the command.
             userName (str): The name of the user.
             initial_group (str, optional): The initial group to display. Defaults to None.
+            blob_service_client (BlobServiceClient, optional): The Azure Blob Service Client.
+            container (str, optional): The container name.
         """
         super().__init__(timeout=timeout)
         self.mode = mode
@@ -32,6 +36,9 @@ class AlgorithmsView(discord.ui.View):
         self.current_page = 0
         self.algorithms_list = []  # List of tuples (id, alg_string)
         self.current_group = initial_group
+        self.blob_service_client = blob_service_client
+        self.container = container
+        self.images = {}
 
         self.OLL_GROUPS = {
             "Awkward Shape": ["29", "30", "41", "42"],
@@ -126,6 +133,9 @@ class AlgorithmsView(discord.ui.View):
             return
         # Get the selected group from the interaction data
         selected_group = interaction.data["values"][0]
+        # Defer update to allow time for image downloading
+        await interaction.response.defer()
+
         self.load_group(selected_group)
         self.current_group = selected_group
 
@@ -134,7 +144,7 @@ class AlgorithmsView(discord.ui.View):
 
     def load_group(self, group_name):
         """
-        Loads the algorithms for the specified group into algorithms_list.
+        Loads the algorithms for the specified group into algorithms_list and fetches images.
 
         Args:
             group_name (str): The name of the group to load.
@@ -157,20 +167,86 @@ class AlgorithmsView(discord.ui.View):
             alg_str = full_data.get(alg_id, "Not found")
             self.algorithms_list.append((alg_id, alg_str))
 
+        # Download images if client is available
+        if self.blob_service_client and self.container:
+            import io
+
+            for alg_id, alg_str in self.algorithms_list:
+                # Avoid re-downloading if already present
+                if alg_id in self.images:
+                    continue
+
+                try:
+                    blob_name = f"{self.mode}/{alg_id}.png"
+                    blob_client = self.blob_service_client.get_blob_client(
+                        container=self.container, blob=blob_name
+                    )
+
+                    stream = io.BytesIO()
+                    blob_client.download_blob().readinto(stream)
+                    stream.seek(0)
+                    self.add_image(alg_id, stream)
+                except Exception as e:
+                    print(f"Error loading image for {blob_name}: {e}")
+
         self.current_page = 0
+
+    async def update_view(self, interaction: discord.Interaction):
+        """
+        Updates the view with the current embed and button states.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+        """
+        self.update_buttons()
+        embed, file = self.get_embed()
+        if interaction.response.is_done():
+            if file:
+                # Need to reset file seek if reusing, but here we create fresh from bytes
+                await interaction.edit_original_response(
+                    embed=embed, view=self, attachments=[file]
+                )
+            else:
+                await interaction.edit_original_response(
+                    embed=embed, view=self, attachments=[]
+                )
+        else:
+            if file:
+                await interaction.response.edit_message(
+                    embed=embed, view=self, attachments=[file]
+                )
+            else:
+                await interaction.response.edit_message(
+                    embed=embed, view=self, attachments=[]
+                )
+
+    def add_image(self, alg_id, image_data):
+        """
+        Adds an image data (bytes) for a specific algorithm ID.
+
+        Args:
+            alg_id (str): The algorithm ID.
+            image_data (io.BytesIO): The image data.
+        """
+        if not hasattr(self, "images"):
+            self.images = {}
+        self.images[alg_id] = image_data
 
     def get_embed(self):
         """
         Generates the embed for the current algorithm page.
 
         Returns:
-            discord.Embed: The embed to display.
+            tuple: (discord.Embed, discord.File | None)
         """
         if not self.algorithms_list:
-            return discord.Embed(
-                title="No algorithms selected",
-                description="Please select a group from the menu.",
-                color=discord.Color.red(),
+            return (
+                discord.Embed(
+                    title="No algorithms selected",
+                    description="Please select a group from the menu.",
+                    color=discord.Color.red(),
+                ),
+                None,
             )
 
         alg_id, alg_str = self.algorithms_list[self.current_page]
@@ -186,21 +262,15 @@ class AlgorithmsView(discord.ui.View):
         embed.set_footer(
             text=f"Algorithm {self.current_page + 1}/{len(self.algorithms_list)}"
         )
-        return embed
 
-    async def update_view(self, interaction: discord.Interaction):
-        """
-        Updates the view with the current embed and button states.
+        file = None
+        if hasattr(self, "images") and alg_id in self.images:
+            image_stream = self.images[alg_id]
+            image_stream.seek(0)
+            file = discord.File(fp=image_stream, filename=f"{alg_id}.png")
+            embed.set_image(url=f"attachment://{alg_id}.png")
 
-        Args:
-            interaction (discord.Interaction): The interaction object.
-        """
-        self.update_buttons()
-        embed = self.get_embed()
-        if interaction.response.is_done():
-            await interaction.edit_original_response(embed=embed, view=self)
-        else:
-            await interaction.response.edit_message(embed=embed, view=self)
+        return embed, file
 
     def update_buttons(self):
         """

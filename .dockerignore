@@ -13,3 +13,5 @@ Dockerfile
 ./src/data/images
 ./src/scripts
 ./src/tests
+/test
+src/CommandsRegister

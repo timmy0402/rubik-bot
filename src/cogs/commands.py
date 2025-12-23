@@ -8,11 +8,27 @@ import io
 import time
 from views.algorithms import AlgorithmsView
 from views.timer import TimerView
+from azure.storage.blob import BlobServiceClient
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class RubiksCommands(commands.Cog):
     def __init__(self, bot):
         self.bot = bot
+        account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
+        access_key = os.getenv("AZURE_STORAGE_ACCESS_KEY")
+        self.container = os.getenv("AZURE_STORAGE_CONTAINER_NAME")
+
+        # Initialize blob service client
+        if account_url and access_key:
+            self.blob_service_client = BlobServiceClient(
+                account_url=account_url, credential=access_key
+            )
+        else:
+            self.blob_service_client = None
 
     def _log_command_usage(self, command_name):
         try:
@@ -123,6 +139,8 @@ class RubiksCommands(commands.Cog):
             user_id=interaction.user.id,
             userName=interaction.user.name,
             initial_group=arg,
+            blob_service_client=self.blob_service_client,
+            container=self.container,
         )
 
         if arg and arg not in algo_view.OLL_GROUPS:
@@ -131,9 +149,13 @@ class RubiksCommands(commands.Cog):
 
         # Update buttons state initially
         algo_view.update_buttons()
-        embed = algo_view.get_embed()
+        # get_embed now returns a tuple
+        embed, file = algo_view.get_embed()
 
-        await interaction.followup.send(embed=embed, view=algo_view)
+        if file:
+            await interaction.followup.send(embed=embed, view=algo_view, file=file)
+        else:
+            await interaction.followup.send(embed=embed, view=algo_view)
 
     @app_commands.command(name="pll", description="View all PLL algorithms")
     @app_commands.describe(arg="Optional: Jump to a specific group")
@@ -160,6 +182,8 @@ class RubiksCommands(commands.Cog):
             user_id=interaction.user.id,
             userName=interaction.user.name,
             initial_group=arg,
+            blob_service_client=self.blob_service_client,
+            container=self.container,
         )
 
         if arg and arg not in algo_view.PLL_GROUPS:
@@ -168,9 +192,13 @@ class RubiksCommands(commands.Cog):
 
         # Update buttons state initially
         algo_view.update_buttons()
-        embed = algo_view.get_embed()
+        # get_embed now returns a tuple
+        embed, file = algo_view.get_embed()
 
-        await interaction.followup.send(embed=embed, view=algo_view)
+        if file:
+            await interaction.followup.send(embed=embed, view=algo_view, file=file)
+        else:
+            await interaction.followup.send(embed=embed, view=algo_view)
 
     @app_commands.command(
         name="stopwatch", description="Time your own solve with timer"
