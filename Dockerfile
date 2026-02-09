@@ -1,6 +1,6 @@
 # Stage 1: Builder
 # Used to compile dependencies and install build tools
-FROM python:3.11-slim AS builder
+FROM python:3.12-slim AS builder
 
 WORKDIR /app
 
@@ -29,7 +29,7 @@ RUN pip install --upgrade pip && \
 
 # Stage 2: Runtime
 # Minimal image for production
-FROM python:3.11-slim AS runtime
+FROM python:3.12-slim AS runtime
 
 WORKDIR /app
 

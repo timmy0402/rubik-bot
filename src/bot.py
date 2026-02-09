@@ -10,23 +10,33 @@ logger = logging.getLogger(__name__)
 
 
 class RubiksBot(commands.Bot):
+    """
+    Main Bot class for Cube Crafter.
+    Handles initialization, database management, and background tasks.
+    """
+
     def __init__(self):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.guilds = True
         super().__init__(command_prefix="/", intents=intents)
 
+        # Persistent database manager shared across the bot
         self.db_manager = DatabaseManager()
 
     async def setup_hook(self):
+        """
+        Setup hook called before the bot starts.
+        Registers cogs, syncs commands, and starts background loops.
+        """
         # Add the Cog
         from cogs.commands import RubiksCommands
 
         await self.add_cog(RubiksCommands(self))
-        # Sync commands
+        # Sync application commands with Discord
         await self.tree.sync()
 
-        # Start background tasks
+        # Start background tasks for database health and stats reporting
         if not self.keep_database_alive.is_running():
             logger.info("Starting keep-alive task...")
             self.keep_database_alive.start()
@@ -40,14 +50,23 @@ class RubiksBot(commands.Bot):
             self.update_discordbotlist.start()
 
     async def on_ready(self):
+        """
+        Triggered when the bot is fully connected and ready.
+        """
         logger.info(f"We have logged as an {self.user}")
-        # Connect to database
+        # Initialize the shared database connection
         self.db_manager.connect()
 
     async def on_disconnect(self):
+        """
+        Cleanup logic when the bot disconnects.
+        """
         self.db_manager.close()
 
     async def on_message(self, message):
+        """
+        Handle incoming messages.
+        """
         if message.author == self.user:
             return
         if message.content.startswith("!hello"):
@@ -56,11 +75,17 @@ class RubiksBot(commands.Bot):
 
     @tasks.loop(minutes=5)
     async def keep_database_alive(self):
+        """
+        Background task to prevent Azure SQL from going idle.
+        """
         logger.debug("Executing keep-alive query...")
         self.db_manager.keep_alive()
 
     @tasks.loop(minutes=60)
     async def update_topgg(self):
+        """
+        Post bot stats to Top.gg (Production only).
+        """
         if os.getenv("ENV", "").upper() != "PROD":
             return
         servers = len(self.guilds)
@@ -83,6 +108,9 @@ class RubiksBot(commands.Bot):
 
     @tasks.loop(minutes=60)
     async def update_discordbotlist(self):
+        """
+        Post bot stats to DiscordBotList (Production only).
+        """
         if os.getenv("ENV", "").upper() != "PROD":
             return
         servers = len(self.guilds)

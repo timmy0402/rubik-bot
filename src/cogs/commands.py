@@ -19,13 +19,17 @@ logger = logging.getLogger(__name__)
 
 
 class RubiksCommands(commands.Cog):
+    """
+    Discord Cog containing all Rubik's Cube related commands.
+    """
+
     def __init__(self, bot):
         self.bot = bot
         account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
         access_key = os.getenv("AZURE_STORAGE_ACCESS_KEY")
         self.container = os.getenv("AZURE_STORAGE_CONTAINER_NAME")
 
-        # Initialize blob service client
+        # Initialize Azure Blob service client for algorithm images
         if account_url and access_key:
             self.blob_service_client = BlobServiceClient(
                 account_url=account_url, credential=access_key
@@ -34,18 +38,18 @@ class RubiksCommands(commands.Cog):
             self.blob_service_client = None
 
     def _log_command_usage(self, command_name):
+        """
+        Logs the usage of a specific command to the database.
+        """
         try:
-            self.bot.db_manager.connect()
             self.bot.db_manager.cursor.execute(
-                "INSERT INTO CommandLog(CommandName) VALUES(?)", (command_name)
+                "INSERT INTO CommandLog(CommandName) VALUES(?)", (command_name,)
             )
             self.bot.db_manager.cursor.commit()
-            self.bot.db_manager.close()
-            self.bot.db_manager.close()
         except Exception as e:
             logger.error(f"Log usage failed: {e}")
 
-    @app_commands.command(name="scramble", description="Scramble")
+    @app_commands.command(name="scramble", description="Generate a Rubik's Cube scramble")
     @app_commands.describe(arg="Choose the scramble type")
     @app_commands.choices(
         arg=[
@@ -63,37 +67,43 @@ class RubiksCommands(commands.Cog):
         ]
     )
     async def scramble(self, interaction: discord.Interaction, arg: str):
+        """
+        Generates a scramble for the selected puzzle type and displays it with an image.
+        """
         if interaction.response.is_done():
             logger.warning("Interaction already responded to.")
         else:
             await interaction.response.defer()
 
-            # Insert usage information into database
+            # Log command usage
             self._log_command_usage("scramble")
 
+            # Call external Scrambler API
             url = "https://scrambler-api-apim.azure-api.net/scrambler-api/GetScramble"
             params = {"puzzle": arg}
 
-            logger.info("Getting scramble")
+            logger.info(f"Getting scramble for {arg}")
             response = requests.get(url=url, params=params)
             logger.info("Connection code: " + str(response.status_code))
-            response = response.json()
+            
+            if response.status_code != 200:
+                await interaction.followup.send("Failed to retrieve scramble. Please try again later.")
+                return
+                
+            response_json = response.json()
+            scramble_string = response_json["scramble"]
+            svg_string = response_json["image"]
 
-            scramble_string = response["scramble"]
-            svg_string = response["image"]
-
-            # decode base 64
+            # Decode base64 image data
             decode_image = base64.b64decode(svg_string)
 
-            # save to memory
+            # Load into memory buffer
             png_buffer = io.BytesIO(decode_image)
             png_buffer.seek(0)
 
-            # Open image with Pillow and resize it
+            # Process image with Pillow (Resize and enhance contrast)
             with Image.open(png_buffer) as img:
                 resized_img = img.resize((500, 300))
-
-                # Improve contrast
                 enhancer = ImageEnhance.Contrast(resized_img)
                 res = enhancer.enhance(2)
 
@@ -101,9 +111,10 @@ class RubiksCommands(commands.Cog):
                 res.save(new_png_buffer, format="PNG")
                 new_png_buffer.seek(0)
 
+            # Create Discord file and embed
             file = discord.File(fp=new_png_buffer, filename="rubiks_cube.png")
             embed = discord.Embed(
-                title="Your scramble", description=scramble_string, color=0x0099FF
+                title=f"Your {arg} Scramble", description=scramble_string, color=0x0099FF
             )
             embed.set_image(url="attachment://rubiks_cube.png")
 
@@ -122,22 +133,18 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="I Shape", value="I Shape"),
             app_commands.Choice(name="P Shape", value="P Shape"),
             app_commands.Choice(name="Small L Shape", value="Small L Shape"),
-            app_commands.Choice(
-                name="Small Lightning Bolt", value="Small Lightning Bolt"
-            ),
+            app_commands.Choice(name="Small Lightning Bolt", value="Small Lightning Bolt"),
             app_commands.Choice(name="W Shape", value="W Shape"),
             app_commands.Choice(name="T Shape", value="T Shape"),
         ]
     )
     async def oll(self, interaction: discord.Interaction, arg: str = None):
         """
-        Shows a list of OLL algorithms in an interactive view.
+        Displays OLL algorithms in an interactive paginated view.
         """
         await interaction.response.defer()
-
         self._log_command_usage("oll")
 
-        # Instantiate AlgorithmsView with initial group if arg provided
         algo_view = AlgorithmsView(
             mode="oll",
             user_id=interaction.user.id,
@@ -148,12 +155,10 @@ class RubiksCommands(commands.Cog):
         )
 
         if arg and arg not in algo_view.OLL_GROUPS:
-            await interaction.followup.send(f"Unknown group: {arg}")
+            await interaction.followup.send(f"Unknown OLL group: {arg}")
             return
 
-        # Update buttons state initially
         algo_view.update_buttons()
-        # get_embed now returns a tuple
         embed, file = algo_view.get_embed()
 
         if file:
@@ -165,18 +170,14 @@ class RubiksCommands(commands.Cog):
     @app_commands.describe(arg="Optional: Jump to a specific group")
     @app_commands.choices(
         arg=[
-            app_commands.Choice(
-                name="Adjacent Corner Swap", value="Adjacent Corner Swap"
-            ),
-            app_commands.Choice(
-                name="Diagonal Corner Swap", value="Diagonal Corner Swap"
-            ),
+            app_commands.Choice(name="Adjacent Corner Swap", value="Adjacent Corner Swap"),
+            app_commands.Choice(name="Diagonal Corner Swap", value="Diagonal Corner Swap"),
             app_commands.Choice(name="Edges Only", value="Edges Only"),
         ]
     )
     async def pll(self, interaction: discord.Interaction, arg: str = None):
         """
-        Shows a list of PLL algorithms in an interactive view.
+        Displays PLL algorithms in an interactive paginated view.
         """
         await interaction.response.defer()
         self._log_command_usage("pll")
@@ -191,12 +192,10 @@ class RubiksCommands(commands.Cog):
         )
 
         if arg and arg not in algo_view.PLL_GROUPS:
-            await interaction.followup.send(f"Unknown group: {arg}")
+            await interaction.followup.send(f"Unknown PLL group: {arg}")
             return
 
-        # Update buttons state initially
         algo_view.update_buttons()
-        # get_embed now returns a tuple
         embed, file = algo_view.get_embed()
 
         if file:
@@ -204,21 +203,26 @@ class RubiksCommands(commands.Cog):
         else:
             await interaction.followup.send(embed=embed, view=algo_view)
 
-    @app_commands.command(
-        name="stopwatch", description="Time your own solve with timer"
-    )
+    @app_commands.command(name="stopwatch", description="Time your own solve with an interactive timer")
     async def stopwatch(self, interaction: discord.Interaction):
+        """
+        Launches an interactive stopwatch for the user to time their solves.
+        """
         user_id = interaction.user.id
         user = await self.bot.fetch_user(user_id)
 
         await interaction.response.defer()
-
-        # Insert usage information into database
         self._log_command_usage("stopwatch")
+        
         try:
-            view = TimerView(timeout=90, user_id=user_id, userName=user.name)
+            view = TimerView(
+                timeout=90,
+                user_id=user_id,
+                userName=user.name,
+                db_manager=self.bot.db_manager,
+            )
             await interaction.followup.send(
-                "Click a button to start or stop the timer.", view=view
+                "Click **Start** to begin timing. Click **Stop** when finished.", view=view
             )
 
             message = await interaction.original_response()
@@ -227,181 +231,144 @@ class RubiksCommands(commands.Cog):
             await view.wait()
             await view.disable_all_items()
         except Exception as e:
+            logger.error(f"Stopwatch error: {e}")
             await interaction.followup.send(
-                "Database Inactive. Try again in 5-20 seconds"
+                "An error occurred with the timer. Please try again."
             )
 
-    @app_commands.command(
-        name="time", description="Display time of your last 10 solves"
-    )
+    @app_commands.command(name="time", description="Display your recent solve times and averages")
     async def time(self, interaction: discord.Interaction):
+        """
+        Fetches the last 15 solves from the database and calculates Ao5/Ao12.
+        """
         await interaction.response.defer(thinking=True)
-
-        # Insert usage information into database
         self._log_command_usage("time")
+        
         try:
-            self.bot.db_manager.connect()
             user_id = interaction.user.id
             user = await self.bot.fetch_user(user_id)
+            
+            # Fetch User Internal ID
             self.bot.db_manager.cursor.execute(
                 "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
             )
             DB_ID = self.bot.db_manager.cursor.fetchval()
-            self.bot.db_manager.cursor.execute(
-                "SELECT TimeID, SolveTime FROM SolveTimes WHERE UserID=? ORDER BY TimeID DESC",
-                (DB_ID),
-            )
-            rows = self.bot.db_manager.cursor.fetchall()
-            # will return [(timeid, Decimal('solveTime')), (timeid1, Decimal('solveTime1'))]
-            def calulate_ao5(times):
-                if len(times) < 5:
-                    return None
-                sorted_times = sorted(times)
-                return sum(sorted_times[1:4]) / 3
-            def calculate_ao12(times):
-                if len(times) < 12:
-                    return None
-                sorted_times = sorted(times)
-                return sum(sorted_times[1:11]) / 10
             
-            if len(rows) >= 12:
-                solve_times = [float(row[1]) for row in rows[:12]]
-                ao5 = calulate_ao5(solve_times)
-                ao12 = calculate_ao12(solve_times)
-            elif len(rows) >= 5:
-                solve_times = [float(row[1]) for row in rows[:5]]
-                ao5 = calulate_ao5(solve_times)
-                ao12 = None
-            else:
-                ao5 = None
-                ao12 = None
-            self.bot.db_manager.close()
+            if not DB_ID:
+                await interaction.followup.send("You haven't recorded any solves yet!")
+                return
 
-            # Create embed respond
+            # Fetch last 15 solves
+            self.bot.db_manager.cursor.execute(
+                "SELECT TOP 15 TimeID, SolveTime FROM SolveTimes WHERE UserID=? ORDER BY TimeID DESC",
+                (DB_ID,)
+            )
+            # Will return list of tuples: [(TimeID1, SolveTime1), (TimeID2, SolveTime2), ...]
+            rows = self.bot.db_manager.cursor.fetchall()
+            
+            if not rows:
+                await interaction.followup.send("No solve history found.")
+                return
+
+            # Helper functions for WCA averages
+            def calculate_ao5(times):
+                if len(times) < 5: return None
+                return sum(sorted(times)[1:4]) / 3
+
+            def calculate_ao12(times):
+                if len(times) < 12: return None
+                return sum(sorted(times)[1:11]) / 10
+            
+            raw_times = [float(row[1]) for row in rows]
+            ao5 = calculate_ao5(raw_times[:5])
+            ao12 = calculate_ao12(raw_times[:12])
+
+            # Build Response Embed
             embed = discord.Embed(
-                title=str(user.name) + "'s solve times: ",
-                description="Your last 15 solve times",
+                title=f"{user.name}'s Solve Times",
+                description="Your most recent solves and calculated averages.",
                 color=discord.Color.blue(),
             )
-            # Prepare fields for embed
-            time_ids = "\n".join([str(row[0]) for row in rows])
-            solve_times = "\n".join([f"{row[1]:.02f}" for row in rows])
+            
+            ids_str = "\n".join([str(row[0]) for row in rows])
+            times_str = "\n".join([f"{row[1]:.02f}s" for row in rows])
 
-            # Added fields
-            embed.add_field(name="TimeID", value=time_ids, inline=True)
-            embed.add_field(name="SolveTimes", value=solve_times, inline=True)
-            embed.add_field(name="\u200b", value="\u200b", inline=True)  # Empty field for spacing
-            embed.add_field(name="Ao5", value=f"{ao5:.02f}" if ao5 else "N/A", inline=True)
-            embed.add_field(name="Ao12", value=f"{ao12:.02f}" if ao12 else "N/A", inline=True)
+            embed.add_field(name="ID", value=ids_str, inline=True)
+            embed.add_field(name="Time", value=times_str, inline=True)
+            embed.add_field(name="Stats", value=(
+                f"**Ao5:** {ao5:.02f}s\n" if ao5 else "**Ao5:** N/A\n"
+            ) + (
+                f"**Ao12:** {ao12:.02f}s" if ao12 else "**Ao12:** N/A"
+            ), inline=True)
 
             await interaction.followup.send(embed=embed)
-        except discord.errors.NotFound:
-            # Handle expired interaction
-            if interaction.channel:
-                await interaction.channel.send(
-                    "The interaction has expired. Please try the command again."
-                )
         except Exception as e:
-            await interaction.followup.send(
-                "Database Inactive. Try again in 5-20 seconds"
-            )
+            logger.error(f"Time command error: {e}")
+            await interaction.followup.send("Database connection error. Please try again later.")
 
-    @app_commands.command(
-        name="delete_time", description="Delete a time from your solve times"
-    )
-    @app_commands.describe(timeid="The ID of the time to delete")
+    @app_commands.command(name="delete_time", description="Delete a specific solve time by ID")
+    @app_commands.describe(timeid="The ID of the time to delete (found in /time)")
     async def deleteTime(self, interaction: discord.Interaction, timeid: str):
-        # Defer immediately to prevent interaction timeout
+        """
+        Deletes a specific solve time from the user's history.
+        """
         await interaction.response.defer(thinking=True)
-
-        # Insert usage information into database
         self._log_command_usage("delete_time")
+        
         try:
-            # Connect to the database
-            self.bot.db_manager.connect()
-
-            # Get the user ID from Discord interaction
             user_id = interaction.user.id
             self.bot.db_manager.cursor.execute(
                 "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
             )
             DB_ID = self.bot.db_manager.cursor.fetchval()
 
-            # If no user ID is found, respond and stop
             if not DB_ID:
-                await interaction.followup.send(
-                    "You don't have any recorded times yet. Use the stopwatch to add some."
-                )
-                self.bot.db_manager.close()
+                await interaction.followup.send("History not found.")
                 return
 
-            # Check if the provided TimeID exists in the SolveTimes table
+            # Security check: Ensure the time belongs to the user
             self.bot.db_manager.cursor.execute(
                 "SELECT UserID FROM SolveTimes WHERE TimeID = ?", (timeid,)
             )
-            temp_id = self.bot.db_manager.cursor.fetchval()
+            owner_id = self.bot.db_manager.cursor.fetchval()
 
-            if not temp_id:
-                await interaction.followup.send(
-                    "This TimeID doesn't exist. Please check the ID and try again."
-                )
-                self.bot.db_manager.close()
+            if not owner_id:
+                await interaction.followup.send("Time ID not found.")
                 return
 
-            # If the time does not belong to the user, respond with an error
-            if temp_id != DB_ID:
-                await interaction.followup.send(
-                    "This is not your time. Please try a different one."
-                )
-                self.bot.db_manager.close()
+            if owner_id != DB_ID:
+                await interaction.followup.send("You cannot delete someone else's time!")
                 return
 
-            # Delete the time entry from the database
+            # Perform deletion
             self.bot.db_manager.cursor.execute(
                 "DELETE FROM SolveTimes WHERE TimeID = ?", (timeid,)
             )
             self.bot.db_manager.cursor.commit()
-            self.bot.db_manager.close()
 
-            # Send confirmation message
-            await interaction.followup.send(
-                f"Time with ID `{timeid}` has been successfully deleted."
-            )
+            await interaction.followup.send(f"Successfully deleted record `{timeid}`.")
 
-        except discord.errors.NotFound:
-            # Handle expired interaction if the user takes too long
-            if interaction.channel:
-                await interaction.channel.send(
-                    "The interaction has expired. Please try again."
-                )
         except Exception as e:
-            # Catch any other errors
-            await interaction.followup.send(
-                "An error occurred while processing your request. Please try again later."
-            )
-            logger.error(f"Error in delete_time: {e}")
+            logger.error(f"Delete time error: {e}")
+            await interaction.followup.send("Error processing deletion.")
 
-    @app_commands.command(name="help", description="view all command")
+    @app_commands.command(name="help", description="View all available commands")
     async def help(self, interaction: discord.Interaction):
+        """
+        Displays a list of all commands and their descriptions.
+        """
         await interaction.response.defer()
-
-        # Insert usage information into database
         self._log_command_usage("help")
 
         embed = discord.Embed(
-            title="Help", description="Command list", color=discord.Color.blue()
+            title="Cube Crafter Help", 
+            description="Available commands for tracking and improving your solves:", 
+            color=discord.Color.blue()
         )
-        embed.add_field(
-            name="scramble", value="Create a scramble with any WCA cube", inline=False
-        )
-        embed.add_field(
-            name="stopwatch", value="Create a stopwatch for your solve", inline=False
-        )
-        embed.add_field(
-            name="time", value="Show the time for your last 10 solves", inline=False
-        )
-        embed.add_field(
-            name="delete_time", value="Delete a time by TimeID", inline=False
-        )
+        embed.add_field(name="/scramble", value="Generate a scramble for various puzzles", inline=False)
+        embed.add_field(name="/stopwatch", value="Interactive timer to record your solves", inline=False)
+        embed.add_field(name="/time", value="View your recent times and WCA averages", inline=False)
+        embed.add_field(name="/delete_time", value="Remove an incorrect time record", inline=False)
+        embed.add_field(name="/oll / /pll", value="Reference library for CFOP algorithms", inline=False)
 
         await interaction.followup.send(embed=embed)

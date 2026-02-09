@@ -15,3 +15,6 @@ Dockerfile
 ./src/tests
 /test
 src/CommandsRegister
+GEMINI.md
+PLAN.md
+sql_trigger
