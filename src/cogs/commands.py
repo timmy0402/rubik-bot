@@ -253,12 +253,34 @@ class RubiksCommands(commands.Cog):
             )
             rows = self.bot.db_manager.cursor.fetchall()
             # will return [(timeid, Decimal('solveTime')), (timeid1, Decimal('solveTime1'))]
+            def calulate_ao5(times):
+                if len(times) < 5:
+                    return None
+                sorted_times = sorted(times)
+                return sum(sorted_times[1:4]) / 3
+            def calculate_ao12(times):
+                if len(times) < 12:
+                    return None
+                sorted_times = sorted(times)
+                return sum(sorted_times[1:11]) / 10
+            
+            if len(rows) >= 12:
+                solve_times = [float(row[1]) for row in rows[:12]]
+                ao5 = calulate_ao5(solve_times)
+                ao12 = calculate_ao12(solve_times)
+            elif len(rows) >= 5:
+                solve_times = [float(row[1]) for row in rows[:5]]
+                ao5 = calulate_ao5(solve_times)
+                ao12 = None
+            else:
+                ao5 = None
+                ao12 = None
             self.bot.db_manager.close()
 
             # Create embed respond
             embed = discord.Embed(
                 title=str(user.name) + "'s solve times: ",
-                description="Your last 10 solve times",
+                description="Your last 15 solve times",
                 color=discord.Color.blue(),
             )
             # Prepare fields for embed
@@ -268,6 +290,9 @@ class RubiksCommands(commands.Cog):
             # Added fields
             embed.add_field(name="TimeID", value=time_ids, inline=True)
             embed.add_field(name="SolveTimes", value=solve_times, inline=True)
+            embed.add_field(name="\u200b", value="\u200b", inline=True)  # Empty field for spacing
+            embed.add_field(name="Ao5", value=f"{ao5:.02f}" if ao5 else "N/A", inline=True)
+            embed.add_field(name="Ao12", value=f"{ao12:.02f}" if ao12 else "N/A", inline=True)
 
             await interaction.followup.send(embed=embed)
         except discord.errors.NotFound:
