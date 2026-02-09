@@ -1,3 +1,4 @@
+import json
 import discord
 from discord.ext import commands, tasks
 from database.DB_Manager import DatabaseManager
@@ -19,6 +20,7 @@ class RubiksBot(commands.Bot):
         intents = discord.Intents.default()
         intents.message_content = True
         intents.guilds = True
+        self.server_count = 0
         super().__init__(command_prefix="/", intents=intents)
 
         # Persistent database manager shared across the bot
@@ -82,21 +84,44 @@ class RubiksBot(commands.Bot):
         self.db_manager.keep_alive()
 
     @tasks.loop(minutes=60)
+    async def get_servers_count(self):
+        """
+        Get the current number of servers the bot is in.
+        """
+        url = "https://discord.com/api/v10/users/@me/guilds?limit=200"
+
+        token = os.getenv("TOKEN")
+        payload = {}
+        headers = {
+        'Authorization': f'Bot {token}',
+        }
+
+        response = requests.request("GET", url, headers=headers, data=payload)
+        if response.status_code == 200:
+            guilds = response.json()
+            logger.info(f"Retrieved {len(guilds)} guilds from Discord API")
+            self.server_count = len(guilds)
+        else:
+            logger.error(f"Failed to get guilds: {response.status_code} - {response.text}")
+        return self.server_count
+    
+    
+    @tasks.loop(minutes=60)
     async def update_topgg(self):
         """
         Post bot stats to Top.gg (Production only).
         """
         if os.getenv("ENV", "").upper() != "PROD":
             return
-        servers = len(self.guilds)
+        servers = self.server_count if self.server_count > 0 else await self.get_servers_count()
         id = os.getenv("APPLICATION_ID")
         token = os.getenv("TOPGG_TOKEN")
         url = f"https://top.gg/api/bots/{id}/stats"
-        params = {"server_count": servers}
-        headers = {"Authorization": token}
+        payload = json.dumps({"server_count": servers})
+        headers = {"Authorization": token, "Content-Type": "application/json"}
 
         try:
-            response = requests.post(url, json=params, headers=headers)
+            response = requests.request("POST", url, headers=headers, data=payload,)
             if response.status_code == 200:
                 logger.info(f"Posted server count ({servers}) to Top.gg")
             else:
@@ -113,7 +138,7 @@ class RubiksBot(commands.Bot):
         """
         if os.getenv("ENV", "").upper() != "PROD":
             return
-        servers = len(self.guilds)
+        servers = self.server_count if self.server_count > 0 else await self.get_servers_count()
         id = os.getenv("APPLICATION_ID")
         token = os.getenv("BOTLIST_TOKEN")
         url = f"https://discordbotlist.com/api/v1/bots/{id}/stats"
