@@ -406,3 +406,22 @@ class RubiksCommands(commands.Cog):
         embed.add_field(name="/oll / /pll", value="Reference library for CFOP algorithms", inline=False)
 
         await interaction.followup.send(embed=embed)
+
+    @app_commands.command(name="invite", description="Get the invite link to add the bot to your server")
+    async def invite(self, interaction: discord.Interaction):
+        """
+        Provides an invite link for users to add the bot to their own servers.
+        """
+        await interaction.response.defer()
+        self._log_command_usage("invite")
+
+        client_id = os.getenv("APPLICATION_ID")
+        invite_url = f"https://discord.com/oauth2/authorize?client_id={client_id}"
+
+        embed = discord.Embed(
+            title="Invite Cube Crafter to Your Server!",
+            description=f"Click [this link]({invite_url}) to add the bot and start tracking your solves in your own server!",
+            color=discord.Color.green()
+        )
+
+        await interaction.followup.send(embed=embed)

@@ -33,10 +33,11 @@ Commands
 | `/delete_time [id]` | Removes a specific solve from your history using its TimeID. |
 | `/oll [group]` | View OLL algorithms with visual guides and pagination. |
 | `/pll [group]` | View PLL algorithms with visual guides and pagination. |
+| `/invite` | Generates invite link. |
 
 ---
 
-## 🏗 Technical Stack
+##  Technical Stack
 
 - **Language:** Python 3.12 (`discord.py`)
 - **Database:** Azure SQL (managed via `pyodbc`)
@@ -48,6 +49,6 @@ Commands
 ## 📊 Bot Stats
 
 [![](https://discordbotlist.com/api/v1/bots/1197268536918278236/widget)](https://discordbotlist.com/bots/cube-crafter)
-[![Discord Bots](https://top.gg/api/widget/1197268536918278236.svg)(https://top.gg//bot/1197268536918278236)]
+![Discord Bots](https://top.gg/api/widget/1197268536918278236.svg)
 ---
 © 2024 Cube Crafter. All rights reserved.
