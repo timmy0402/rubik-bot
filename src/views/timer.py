@@ -1,77 +1,224 @@
 import time
+import logging
 import discord
 
+logger = logging.getLogger(__name__)
+
+
 class TimerView(discord.ui.View):
-    def __init__(self, *, timeout: float | None = 180, user_id, userName, db_manager):
+    """
+    A discord.ui.View that provides an interactive stopwatch for users to time their cube solves.
+    """
+
+    def __init__(
+        self,
+        *,
+        timeout: float | None = 180,
+        user_id: int,
+        userName: str,
+        puzzle: str,
+        db_manager,
+    ):
+        """
+        Initialize the TimerView.
+
+        Args:
+            timeout (float | None): The timeout for the view in seconds.
+            user_id (int): The Discord ID of the user who started the timer.
+            userName (str): The name of the user.
+            puzzle (str): The type of puzzle being timed (e.g., '3x3').
+            db_manager: The database manager instance.
+        """
         super().__init__(timeout=timeout)
         self.user_id = user_id
-        self.userName = userName
+        self.user_name = userName
+        self.puzzle = puzzle
         self.db_manager = db_manager
         self.message = None
-        self.db_manager.cursor.execute(
-            "SELECT UserID FROM Users WHERE DiscordID=?", (user_id)
-        )
-        self.DB_ID = self.db_manager.cursor.fetchval()
-        if not self.DB_ID:
-            self.db_manager.cursor.execute(
-                "INSERT INTO Users(UserName,DiscordID) VALUES(?,?)", (userName, user_id)
-            )
-            self.db_manager.cursor.commit()
-            self.db_manager.cursor.execute(
-                "SELECT UserID FROM Users WHERE DiscordID=?", (user_id)
-            )
-            self.DB_ID = self.db_manager.cursor.fetchval()
+        self.start_time = None
+        self.end_time = None
 
-    startTime = None
-    endTime = None
+        # Check if the user exists in the database, if not create a new entry
+        self.db_id = self._get_or_create_user()
+
+    def _get_or_create_user(self) -> int:
+        """
+        Retrieves the internal UserID from the database, creating a new user record if necessary.
+
+        Returns:
+            int: The UserID from the database.
+        """
+        try:
+            # Check for existing user
+            self.db_manager.cursor.execute(
+                "SELECT UserID FROM Users WHERE DiscordID=?", (self.user_id,)
+            )
+            db_id = self.db_manager.cursor.fetchval()
+
+            if not db_id:
+                # Insert new user if not found
+                self.db_manager.cursor.execute(
+                    "INSERT INTO Users(UserName, DiscordID) VALUES(?, ?)",
+                    (self.user_name, self.user_id),
+                )
+                self.db_manager.connection.commit()
+
+                # Fetch the newly created UserID
+                self.db_manager.cursor.execute(
+                    "SELECT UserID FROM Users WHERE DiscordID=?", (self.user_id,)
+                )
+                db_id = self.db_manager.cursor.fetchval()
+
+            return db_id
+        except Exception as e:
+            logger.error(f"Error in _get_or_create_user: {e}")
+            return None
+
+    async def interaction_check(self, interaction: discord.Interaction) -> bool:
+        """
+        Ensures that only the user who started the timer can interact with it.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+
+        Returns:
+            bool: True if the user is authorized, False otherwise.
+        """
+        if interaction.user.id != self.user_id:
+            await interaction.response.send_message(
+                "You cannot interact with this timer.", ephemeral=True
+            )
+            return False
+        return True
 
     async def disable_all_items(self):
+        """
+        Disables all buttons in the view and updates the message if it exists.
+        """
         for item in self.children:
-            item.disabled = True
-        await self.message.edit(view=self)
+            if isinstance(item, discord.ui.Button):
+                item.disabled = True
+        
+        if self.message:
+            try:
+                await self.message.edit(view=self)
+            except Exception as e:
+                logger.error(f"Error in disable_all_items: {e}")
 
     async def on_timeout(self) -> None:
-        await self.message.channel.send("Timed out")
-        await self.disable_all_items()
+        """
+        Handles the view timeout by notifying the user and disabling buttons.
+        """
+        try:
+            if self.message:
+                # Notify the user about the timeout
+                await self.message.channel.send(
+                    f"<@{self.user_id}>, your timer session has timed out.",
+                    delete_after=10
+                )
+            await self.disable_all_items()
+        except Exception as e:
+            logger.error(f"Error handling on_timeout: {e}")
 
     @discord.ui.button(label="Start", style=discord.ButtonStyle.success)
-    async def startTimer(
+    async def start_timer(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                "You can not interact with this button"
-            )
-        else:
-            await interaction.response.send_message("Time started!")
-            self.startTime = time.time()
+        """
+        Starts the timer and updates the UI to show timing is in progress.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+            button (discord.ui.Button): The button that was clicked.
+        """
+        self.start_time = time.time()
+
+        # Disable the start button once timing begins
+        button.disabled = True
+
+        embed = discord.Embed(
+            title="Timer Started!",
+            description=f"Currently timing your **{self.puzzle}** solve.\nClick **Stop** when you are finished.",
+            color=discord.Color.green(),
+        )
+        await interaction.response.edit_message(embed=embed, view=self)
 
     @discord.ui.button(label="Stop", style=discord.ButtonStyle.secondary)
-    async def stopTime(
+    async def stop_timer(
         self, interaction: discord.Interaction, button: discord.ui.Button
     ):
-        if interaction.user.id != self.user_id:
+        """
+        Stops the timer, calculates the elapsed time, and saves it to the database.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+            button (discord.ui.Button): The button that was clicked.
+        """
+        if self.start_time is None:
             await interaction.response.send_message(
-                "You can not interact with this button"
+                "You must start the timer first!", ephemeral=True
             )
-        else:
-            self.endTime = time.time()
-            elapsedTime = self.endTime - self.startTime
-            elapsedTime = round(elapsedTime, 2)
-            await interaction.response.send_message("Your time is: " + str(elapsedTime))
+            return
+
+        self.end_time = time.time()
+        elapsed_time = round(self.end_time - self.start_time, 2)
+
+        # Save the result to the database
+        if self.db_id is None:
+            logger.error("Cannot save solve time: User database ID is missing.")
+            await interaction.response.send_message(
+                "An error occurred: Your user record could not be found. Time not saved.",
+                ephemeral=True
+            )
+            return
+
+        try:
             self.db_manager.cursor.execute(
-                "INSERT INTO SolveTimes(UserID,SolveTime) VALUES(?, ?)",
-                (self.DB_ID, elapsedTime),
+                "INSERT INTO SolveTimes(UserID, SolveTime, PuzzleType) VALUES(?, ?, ?)",
+                (self.db_id, elapsed_time, self.puzzle),
             )
-            self.db_manager.cursor.commit()
-            self.stop()
+            self.db_manager.connection.commit()
+        except Exception as e:
+            logger.error(f"Error saving solve time to database: {e}")
+            await interaction.response.send_message(
+                "Failed to save your time to the database.", ephemeral=True
+            )
+            return
+
+        # Prepare the completion embed
+        embed = discord.Embed(
+            title="Solve Completed!",
+            description=f"**{self.user_name}'s {self.puzzle}** time is: **{elapsed_time}s**\nYour record has been saved.",
+            color=discord.Color.red(),
+        )
+
+        # Disable all buttons upon completion
+        for item in self.children:
+            if isinstance(item, discord.ui.Button):
+                item.disabled = True
+
+        await interaction.response.edit_message(embed=embed, view=self)
+        self.stop()
 
     @discord.ui.button(label="Cancel", style=discord.ButtonStyle.red)
     async def cancel(self, interaction: discord.Interaction, button: discord.ui.Button):
-        if interaction.user.id != self.user_id:
-            await interaction.response.send_message(
-                "You can not interact with this button"
-            )
-        else:
-            await interaction.response.send_message("Cancelling")
-            self.stop()
+        """
+        Cancels the current timer session.
+
+        Args:
+            interaction (discord.Interaction): The interaction object.
+            button (discord.ui.Button): The button that was clicked.
+        """
+        embed = discord.Embed(
+            title="Timer Cancelled",
+            description="The timing session was cancelled by the user.",
+            color=discord.Color.red()
+        )
+        
+        # Disable all buttons upon cancellation
+        for item in self.children:
+            if isinstance(item, discord.ui.Button):
+                item.disabled = True
+
+        await interaction.response.edit_message(embed=embed, view=self)
+        self.stop()

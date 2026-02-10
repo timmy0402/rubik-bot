@@ -50,9 +50,9 @@ class RubiksCommands(commands.Cog):
             logger.error(f"Log usage failed: {e}")
 
     @app_commands.command(name="scramble", description="Generate a Rubik's Cube scramble")
-    @app_commands.describe(arg="Choose the scramble type")
+    @app_commands.describe(puzzle="Choose the scramble type")
     @app_commands.choices(
-        arg=[
+        puzzle=[
             app_commands.Choice(name="2x2", value="TWO"),
             app_commands.Choice(name="3x3", value="THREE"),
             app_commands.Choice(name="4x4", value="FOUR"),
@@ -66,7 +66,7 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="clock", value="CLOCK"),
         ]
     )
-    async def scramble(self, interaction: discord.Interaction, arg: str):
+    async def scramble(self, interaction: discord.Interaction, puzzle: str):
         """
         Generates a scramble for the selected puzzle type and displays it with an image.
         """
@@ -80,14 +80,13 @@ class RubiksCommands(commands.Cog):
 
             # Call external Scrambler API
             url = "https://scrambler-api-apim.azure-api.net/scrambler-api/GetScramble"
-            params = {"puzzle": arg}
+            params = {"puzzle": puzzle}
 
-            logger.info(f"Getting scramble for {arg}")
             response = requests.get(url=url, params=params)
-            logger.info("Connection code: " + str(response.status_code))
             
             if response.status_code != 200:
                 await interaction.followup.send("Failed to retrieve scramble. Please try again later.")
+                logger.error(f"Scrambler API error: {response.status_code} - {response.text}")
                 return
                 
             response_json = response.json()
@@ -114,7 +113,7 @@ class RubiksCommands(commands.Cog):
             # Create Discord file and embed
             file = discord.File(fp=new_png_buffer, filename="rubiks_cube.png")
             embed = discord.Embed(
-                title=f"Your {arg} Scramble", description=scramble_string, color=0x0099FF
+                title=f"Your {puzzle} Scramble", description=scramble_string, color=0x0099FF
             )
             embed.set_image(url="attachment://rubiks_cube.png")
 
@@ -204,21 +203,42 @@ class RubiksCommands(commands.Cog):
             await interaction.followup.send(embed=embed, view=algo_view)
 
     @app_commands.command(name="stopwatch", description="Time your own solve with an interactive timer")
-    async def stopwatch(self, interaction: discord.Interaction):
+    @app_commands.describe(arg="Optional: Choose your Puzzle: 3x3, 4x4, etc.")
+    @app_commands.choices(
+        arg=[
+            app_commands.Choice(name="2x2", value="2x2"),
+            app_commands.Choice(name="3x3", value="3x3"),
+            app_commands.Choice(name="4x4", value="4x4"),
+            app_commands.Choice(name="5x5", value="5x5"),
+            app_commands.Choice(name="6x6", value="6x6"),
+            app_commands.Choice(name="7x7", value="7x7"),
+            app_commands.Choice(name="pyraminx", value="PYRA"),
+            app_commands.Choice(name="square1", value="SQ1"),
+            app_commands.Choice(name="megaminx", value="MEGA"),
+            app_commands.Choice(name="skewb", value="SKEWB"),
+            app_commands.Choice(name="clock", value="CLOCK"),
+        ]
+    )
+    async def stopwatch(self, interaction: discord.Interaction, arg: str = None):
         """
         Launches an interactive stopwatch for the user to time their solves.
         """
         user_id = interaction.user.id
         user = await self.bot.fetch_user(user_id)
+        if arg == None:
+            puzzle = "3x3"
+        else:
+            puzzle = arg
 
         await interaction.response.defer()
         self._log_command_usage("stopwatch")
         
         try:
             view = TimerView(
-                timeout=90,
+                timeout=360,
                 user_id=user_id,
                 userName=user.name,
+                puzzle=puzzle,
                 db_manager=self.bot.db_manager,
             )
             await interaction.followup.send(
@@ -237,7 +257,23 @@ class RubiksCommands(commands.Cog):
             )
 
     @app_commands.command(name="time", description="Display your recent solve times and averages")
-    async def time(self, interaction: discord.Interaction):
+    @app_commands.describe(puzzle="Optional: Filter by puzzle type (3x3, 4x4, etc.)")
+    @app_commands.choices(
+        puzzle=[
+            app_commands.Choice(name="2x2", value="2x2"),
+            app_commands.Choice(name="3x3", value="3x3"),
+            app_commands.Choice(name="4x4", value="4x4"),
+            app_commands.Choice(name="5x5", value="5x5"),
+            app_commands.Choice(name="6x6", value="6x6"),
+            app_commands.Choice(name="7x7", value="7x7"),
+            app_commands.Choice(name="pyraminx", value="PYRA"),
+            app_commands.Choice(name="square1", value="SQ1"),
+            app_commands.Choice(name="megaminx", value="MEGA"),
+            app_commands.Choice(name="skewb", value="SKEWB"),
+            app_commands.Choice(name="clock", value="CLOCK"),        
+        ]
+    )
+    async def time(self, interaction: discord.Interaction, puzzle: str = "3x3"):
         """
         Fetches the last 15 solves from the database and calculates Ao5/Ao12.
         """
@@ -252,41 +288,39 @@ class RubiksCommands(commands.Cog):
             self.bot.db_manager.cursor.execute(
                 "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
             )
-            DB_ID = self.bot.db_manager.cursor.fetchval()
+            db_id = self.bot.db_manager.cursor.fetchval()
             
-            if not DB_ID:
+            if not db_id:
                 await interaction.followup.send("You haven't recorded any solves yet!")
                 return
 
-            # Fetch last 15 solves
+            # Fetch last 15 solves for the specific puzzle
             self.bot.db_manager.cursor.execute(
-                "SELECT TOP 15 TimeID, SolveTime FROM SolveTimes WHERE UserID=? ORDER BY TimeID DESC",
-                (DB_ID,)
+                "SELECT TOP 15 TimeID, SolveTime FROM SolveTimes WHERE UserID=? AND PuzzleType=? ORDER BY TimeID DESC",
+                (db_id, puzzle)
             )
-            # Will return list of tuples: [(TimeID1, SolveTime1), (TimeID2, SolveTime2), ...]
             rows = self.bot.db_manager.cursor.fetchall()
             
             if not rows:
-                await interaction.followup.send("No solve history found.")
+                await interaction.followup.send(f"No solve history found for **{puzzle}**.")
                 return
 
-            # Helper functions for WCA averages
-            def calculate_ao5(times):
-                if len(times) < 5: return None
-                return sum(sorted(times)[1:4]) / 3
-
-            def calculate_ao12(times):
-                if len(times) < 12: return None
-                return sum(sorted(times)[1:11]) / 10
+            # Helper functions for WCA averages: remove best and worst, then average
+            def calculate_wca_avg(times, count):
+                if len(times) < count:
+                    return None
+                subset = sorted(times[:count])
+                trimmed = subset[1:-1]
+                return sum(trimmed) / len(trimmed)
             
             raw_times = [float(row[1]) for row in rows]
-            ao5 = calculate_ao5(raw_times[:5])
-            ao12 = calculate_ao12(raw_times[:12])
+            ao5 = calculate_wca_avg(raw_times, 5)
+            ao12 = calculate_wca_avg(raw_times, 12)
 
             # Build Response Embed
             embed = discord.Embed(
-                title=f"{user.name}'s Solve Times",
-                description="Your most recent solves and calculated averages.",
+                title=f"{user.name}'s {puzzle} Solve Times",
+                description=f"Showing your 15 most recent solves for **{puzzle}**.",
                 color=discord.Color.blue(),
             )
             
