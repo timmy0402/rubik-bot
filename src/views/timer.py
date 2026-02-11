@@ -2,6 +2,10 @@ import time
 import logging
 import discord
 
+from stats import update_user_pbs
+from database import DatabaseManager
+from stats.personal_best import calculate_wca_avg, update_user_average_best
+
 logger = logging.getLogger(__name__)
 
 
@@ -17,7 +21,7 @@ class TimerView(discord.ui.View):
         user_id: int,
         userName: str,
         puzzle: str,
-        db_manager,
+        db_manager: DatabaseManager,
     ):
         """
         Initialize the TimerView.
@@ -173,24 +177,64 @@ class TimerView(discord.ui.View):
             return
 
         try:
+            # Save the solve time to the database
             self.db_manager.cursor.execute(
                 "INSERT INTO SolveTimes(UserID, SolveTime, PuzzleType) VALUES(?, ?, ?)",
                 (self.db_id, elapsed_time, self.puzzle),
             )
             self.db_manager.connection.commit()
+            
+            # Update the user's personal best if this solve is better
+            is_new_pb = update_user_pbs(self.db_manager, self.db_id, self.puzzle, elapsed_time)
+
+            # Fetch last 15 solves for the specific puzzle to calculate averages
+            self.db_manager.cursor.execute(
+                "SELECT TOP 15 SolveTime FROM SolveTimes WHERE UserID=? AND PuzzleType=? ORDER BY TIMESTAMP DESC, TimeID DESC",
+                (self.db_id, self.puzzle)
+            )
+            rows = self.db_manager.cursor.fetchall()
+
+            raw_times = [float(row[0]) for row in rows]
+            ao5 = calculate_wca_avg(raw_times, 5)
+            ao12 = calculate_wca_avg(raw_times, 12)
+            
+            is_new_ao5, is_new_ao12 = update_user_average_best(self.db_manager, self.db_id, self.puzzle, ao5, ao12)
+
         except Exception as e:
             logger.error(f"Error saving solve time to database: {e}")
             await interaction.response.send_message(
                 "Failed to save your time to the database.", ephemeral=True
             )
             return
-
+        
         # Prepare the completion embed
+        pb_messages = []
+        if is_new_pb:
+            pb_messages.append("✨ **New Personal Best Single!**")
+        if is_new_ao5:
+            pb_messages.append("🎉 **New Personal Best Ao5!**")
+        if is_new_ao12:
+            pb_messages.append("🎊 **New Personal Best Ao12!**")
+
+        description = f"**{self.user_name}'s {self.puzzle}** time is: **{elapsed_time}s**\n"
+        
+        if pb_messages:
+            description += "\n" + "\n".join(pb_messages) + "\n"
+        else:
+            description += "Your record has been saved.\n"
+
         embed = discord.Embed(
             title="Solve Completed!",
-            description=f"**{self.user_name}'s {self.puzzle}** time is: **{elapsed_time}s**\nYour record has been saved.",
-            color=discord.Color.red(),
+            description=description,
+            color=discord.Color.gold() if pb_messages else discord.Color.green(),
         )
+
+        if ao5:
+            embed.add_field(name="Current Ao5", value=f"{ao5:.2f}s", inline=True)
+        if ao12:
+            embed.add_field(name="Current Ao12", value=f"{ao12:.2f}s", inline=True)
+        
+        embed.set_footer(text=f"Puzzle: {self.puzzle}")
 
         # Disable all buttons upon completion
         for item in self.children:

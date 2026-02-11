@@ -36,7 +36,18 @@ class RubiksBot(commands.Bot):
 
         await self.add_cog(RubiksCommands(self))
         # Sync application commands with Discord
-        await self.tree.sync()
+        if os.getenv("ENV", "").upper() == "PROD":
+            await self.tree.sync()
+            logger.info("Commands synced globally.")
+        else:
+            guild_id = os.getenv("GUILD_ID")
+            if guild_id:
+                dev_guild = discord.Object(id=int(guild_id))
+                self.tree.copy_global_to(guild=dev_guild)
+                await self.tree.sync(guild=dev_guild)
+                logger.info(f"Commands synced with development guild: {guild_id}")
+            else:
+                logger.warning("GUILD_ID not found in environment. Skipping guild sync.")
 
         # Start background tasks for database health and stats reporting
         if not self.keep_database_alive.is_running():

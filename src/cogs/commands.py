@@ -9,6 +9,7 @@ import time
 from views.algorithms import AlgorithmsView
 from views.timer import TimerView
 from azure.storage.blob import BlobServiceClient
+from stats import update_user_pbs, update_user_average_best, get_user_pbs, calculate_wca_avg
 import os
 from dotenv import load_dotenv
 import logging
@@ -36,6 +37,8 @@ class RubiksCommands(commands.Cog):
             )
         else:
             self.blob_service_client = None
+
+        super().__init__()
 
     def _log_command_usage(self, command_name):
         """
@@ -305,13 +308,6 @@ class RubiksCommands(commands.Cog):
                 await interaction.followup.send(f"No solve history found for **{puzzle}**.")
                 return
 
-            # Helper functions for WCA averages: remove best and worst, then average
-            def calculate_wca_avg(times, count):
-                if len(times) < count:
-                    return None
-                subset = sorted(times[:count])
-                trimmed = subset[1:-1]
-                return sum(trimmed) / len(trimmed)
             
             raw_times = [float(row[1]) for row in rows]
             ao5 = calculate_wca_avg(raw_times, 5)
@@ -338,6 +334,63 @@ class RubiksCommands(commands.Cog):
             await interaction.followup.send(embed=embed)
         except Exception as e:
             logger.error(f"Time command error: {e}")
+            await interaction.followup.send("Database connection error. Please try again later.")
+
+    @app_commands.command(name="personal_bests", description="View your personal best times for each puzzle")
+    @app_commands.describe(puzzle="Optional: Filter by puzzle type (3x3, 4x4, etc.)")
+    @app_commands.choices(
+        puzzle=[
+            app_commands.Choice(name="2x2", value="2x2"),
+            app_commands.Choice(name="3x3", value="3x3"),
+            app_commands.Choice(name="4x4", value="4x4"),
+            app_commands.Choice(name="5x5", value="5x5"),
+            app_commands.Choice(name="6x6", value="6x6"),
+            app_commands.Choice(name="7x7", value="7x7"),
+            app_commands.Choice(name="pyraminx", value="PYRA"),
+            app_commands.Choice(name="square1", value="SQ1"),
+            app_commands.Choice(name="megaminx", value="MEGA"),
+            app_commands.Choice(name="skewb", value="SKEWB"),
+            app_commands.Choice(name="clock", value="CLOCK"),
+        ]
+    )
+    async def personal_bests(self, interaction: discord.Interaction, puzzle: str = "3x3"):
+        """
+        Fetches the user's personal best single, Ao5, and Ao12 for the specified puzzle.
+        """
+        await interaction.response.defer(thinking=True)
+        self._log_command_usage("personal_bests")
+
+        try:
+            user_id = interaction.user.id
+            user = await self.bot.fetch_user(user_id)
+
+            # Fetch User Internal ID
+            self.bot.db_manager.cursor.execute(
+                "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
+            )
+            db_id = self.bot.db_manager.cursor.fetchval()
+
+            if not db_id:
+                await interaction.followup.send("You haven't recorded any solves yet!")
+                return
+
+            pb_data = get_user_pbs(self.bot.db_manager, db_id, puzzle)
+
+            if pb_data["BestSingle"] is None and pb_data["BestAo5"] is None and pb_data["BestAo12"] is None:
+                await interaction.followup.send(f"No personal bests found for **{puzzle}**.")
+                return
+
+            embed = discord.Embed(
+                title=f"{user.name}'s Personal Bests for {puzzle}",
+                color=discord.Color.gold(),
+            )
+            embed.add_field(name="Best Single", value=f"{pb_data['BestSingle']:.02f}s" if pb_data['BestSingle'] else "N/A", inline=False)
+            embed.add_field(name="Best Ao5", value=f"{pb_data['BestAo5']:.02f}s" if pb_data['BestAo5'] else "N/A", inline=False)
+            embed.add_field(name="Best Ao12", value=f"{pb_data['BestAo12']:.02f}s" if pb_data['BestAo12'] else "N/A", inline=False)
+
+            await interaction.followup.send(embed=embed)
+        except Exception as e:
+            logger.error(f"Personal bests error: {e}")
             await interaction.followup.send("Database connection error. Please try again later.")
 
     @app_commands.command(name="delete_time", description="Delete a specific solve time by ID")
