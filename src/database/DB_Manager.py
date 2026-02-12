@@ -15,14 +15,17 @@ if(os.getenv("ENV", "").upper() == "PROD"):
     database = os.getenv("AZURE_SQL_DATABASE")
     username = os.getenv("AZURE_SQL_USERNAME")
     password = os.getenv("AZURE_SQL_PASSWORD")
-    driver = os.getenv("{ODBC Driver 18 for SQL Server}")
+    driver = "{ODBC Driver 18 for SQL Server}"
+    trust = "no"
 else:
     logger.info("Running in development environment. Loading development database credentials.")
-    server = os.getenv("DEV_AZURE_SQL_HOST")
-    database = os.getenv("DEV_AZURE_SQL_DATABASE")
-    username = os.getenv("DEV_AZURE_SQL_USERNAME")
-    password = os.getenv("DEV_AZURE_SQL_PASSWORD")
-    driver = os.getenv("{ODBC Driver 18 for SQL Server}")
+    server = os.getenv("DEV_SQL_HOST")
+    database = os.getenv("DEV_SQL_DATABASE")
+    username = os.getenv("DEV_SQL_USERNAME")
+    password = os.getenv("DEV_SQL_PASSWORD")
+    password = "{" + password + "}"
+    driver = "{ODBC Driver 18 for SQL Server}"
+    trust = "yes"
 
 class DatabaseManager:
     """
@@ -53,7 +56,7 @@ class DatabaseManager:
             try:
                 # Construct connection string and connect
                 self.connection = pyodbc.connect(
-                    f"DRIVER={{ODBC Driver 18 for SQL Server}};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=60;"
+                    f"DRIVER={driver};SERVER=tcp:{server};PORT=1433;DATABASE={database};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate={trust};Connection Timeout=60;"
                 )
                 self.cursor = self.connection.cursor()
                 logger.info("DB connected successfully")

@@ -18,7 +18,7 @@ class RubiksBot(commands.Bot):
 
     def __init__(self):
         intents = discord.Intents.default()
-        intents.message_content = True
+        intents.message_content = False
         intents.guilds = True
         self.server_count = 0
         super().__init__(command_prefix="/", intents=intents)
@@ -68,23 +68,16 @@ class RubiksBot(commands.Bot):
         """
         logger.info(f"We have logged as an {self.user}")
         # Initialize the shared database connection
-        self.db_manager.connect()
+        try:
+            self.db_manager.connect()
+        except Exception as e:
+            logger.error(f"Failed to initialize database connection: {e}")
 
     async def on_disconnect(self):
         """
         Cleanup logic when the bot disconnects.
         """
         self.db_manager.close()
-
-    async def on_message(self, message):
-        """
-        Handle incoming messages.
-        """
-        if message.author == self.user:
-            return
-        if message.content.startswith("!hello"):
-            await message.channel.send("Hello!")
-        await self.process_commands(message)
 
     @tasks.loop(minutes=5)
     async def keep_database_alive(self):
