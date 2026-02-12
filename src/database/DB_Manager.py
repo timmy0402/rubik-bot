@@ -9,12 +9,20 @@ logger = logging.getLogger(__name__)
 
 # Load database environment variables from .env file
 load_dotenv(SRC_DIR / ".env")
-server = os.getenv("AZURE_SQL_HOST")
-database = os.getenv("AZURE_SQL_DATABASE")
-username = os.getenv("AZURE_SQL_USERNAME")
-password = os.getenv("AZURE_SQL_PASSWORD")
-driver = os.getenv("{ODBC Driver 18 for SQL Server}")
-
+if(os.getenv("ENV", "").upper() == "PROD"):
+    logger.info("Running in production environment. Loading production database credentials.")
+    server = os.getenv("AZURE_SQL_HOST")
+    database = os.getenv("AZURE_SQL_DATABASE")
+    username = os.getenv("AZURE_SQL_USERNAME")
+    password = os.getenv("AZURE_SQL_PASSWORD")
+    driver = os.getenv("{ODBC Driver 18 for SQL Server}")
+else:
+    logger.info("Running in development environment. Loading development database credentials.")
+    server = os.getenv("DEV_AZURE_SQL_HOST")
+    database = os.getenv("DEV_AZURE_SQL_DATABASE")
+    username = os.getenv("DEV_AZURE_SQL_USERNAME")
+    password = os.getenv("DEV_AZURE_SQL_PASSWORD")
+    driver = os.getenv("{ODBC Driver 18 for SQL Server}")
 
 class DatabaseManager:
     """

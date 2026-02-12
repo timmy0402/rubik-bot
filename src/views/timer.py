@@ -189,7 +189,7 @@ class TimerView(discord.ui.View):
 
             # Fetch last 15 solves for the specific puzzle to calculate averages
             self.db_manager.cursor.execute(
-                "SELECT TOP 15 SolveTime FROM SolveTimes WHERE UserID=? AND PuzzleType=? ORDER BY TIMESTAMP DESC, TimeID DESC",
+                "SELECT TOP 15 SolveTime FROM SolveTimes WHERE UserID=? AND PuzzleType=? ORDER BY SolveAt DESC, TimeID DESC",
                 (self.db_id, self.puzzle)
             )
             rows = self.db_manager.cursor.fetchall()
