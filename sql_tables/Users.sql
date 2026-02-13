@@ -1,0 +1,6 @@
+Create Table Users(
+    UserID INTEGER IDENTITY(1,1) PRIMARY KEY,
+    DiscordID BIGINT NOT NULL UNIQUE,
+    Username NVARCHAR(100) NOT NULL,
+    JoinDate DATE NOT NULL DEFAULT GETDATE()
+)

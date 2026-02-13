@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  bot:
+    build: .
+    container_name: rubik-bot
+    restart: unless-stopped
+    env_file:
+      - src/.env
+    environment:
+      - DEV_SQL_HOST=dev_sql_cubecrafter
+    networks:
+      - rubik-net
+
+networks:
+  rubik-net:
+    external: true

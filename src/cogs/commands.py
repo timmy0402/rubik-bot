@@ -9,7 +9,7 @@ import time
 from views.algorithms import AlgorithmsView
 from views.timer import TimerView
 from azure.storage.blob import BlobServiceClient
-from stats import update_user_pbs, update_user_average_best, get_user_pbs, calculate_wca_avg
+from stats import update_user_pbs, update_user_average_best, get_user_pbs, calculate_wca_avg, recalculate_user_pbs
 import os
 from dotenv import load_dotenv
 import logging
@@ -299,7 +299,7 @@ class RubiksCommands(commands.Cog):
 
             # Fetch last 15 solves for the specific puzzle
             self.bot.db_manager.cursor.execute(
-                "SELECT TOP 15 TimeID, SolveTime FROM SolveTimes WHERE UserID=? AND PuzzleType=? ORDER BY TimeID DESC",
+                "SELECT TOP 15 TimeID, SolveTime, SolveStatus FROM SolveTimes WHERE UserID=? AND PuzzleType=? ORDER BY TimeID DESC",
                 (db_id, puzzle)
             )
             rows = self.bot.db_manager.cursor.fetchall()
@@ -309,7 +309,27 @@ class RubiksCommands(commands.Cog):
                 return
 
             
-            raw_times = [float(row[1]) for row in rows]
+            raw_times = []
+            formatted_times_list = []
+            
+            for row in rows:
+                t_val = float(row[1])
+                status = row[2] if row[2] else ""
+                
+                # For calculation
+                if status == 'DNF':
+                    raw_times.append(float('inf'))
+                else:
+                    raw_times.append(t_val)
+                    
+                # For display
+                display_str = f"{t_val:.02f}s"
+                if status == 'DNF':
+                    display_str += " (DNF)"
+                elif status == '+2':
+                    display_str += " (+2)"
+                formatted_times_list.append(display_str)
+
             ao5 = calculate_wca_avg(raw_times, 5)
             ao12 = calculate_wca_avg(raw_times, 12)
 
@@ -321,7 +341,7 @@ class RubiksCommands(commands.Cog):
             )
             
             ids_str = "\n".join([str(row[0]) for row in rows])
-            times_str = "\n".join([f"{row[1]:.02f}s" for row in rows])
+            times_str = "\n".join(formatted_times_list)
 
             embed.add_field(name="ID", value=ids_str, inline=True)
             embed.add_field(name="Time", value=times_str, inline=True)
@@ -407,9 +427,9 @@ class RubiksCommands(commands.Cog):
             self.bot.db_manager.cursor.execute(
                 "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
             )
-            DB_ID = self.bot.db_manager.cursor.fetchval()
+            db_id = self.bot.db_manager.cursor.fetchval()
 
-            if not DB_ID:
+            if not db_id:
                 await interaction.followup.send("History not found.")
                 return
 
@@ -423,7 +443,7 @@ class RubiksCommands(commands.Cog):
                 await interaction.followup.send("Time ID not found.")
                 return
 
-            if owner_id != DB_ID:
+            if owner_id != db_id:
                 await interaction.followup.send("You cannot delete someone else's time!")
                 return
 
@@ -438,6 +458,86 @@ class RubiksCommands(commands.Cog):
         except Exception as e:
             logger.error(f"Delete time error: {e}")
             await interaction.followup.send("Error processing deletion.")
+
+    @app_commands.command(name="adjust_time", description="Adjust a specific solve time by ID")
+    @app_commands.describe(timeid="The ID of the time to adjust (found in /time)", operation="Choose either +2 seconds or DNF")
+    @app_commands.choices(
+        operation=[
+            app_commands.Choice(name="+2 seconds", value="plus2"),
+            app_commands.Choice(name="DNF", value="dnf"),
+        ]
+    )
+    async def adjust_time(self, interaction: discord.Interaction, timeid: str, operation: str):
+        """Adjusts a specific solve time by either adding 2 seconds or marking it as DNF.
+        Args:           
+          timeid (str): The ID of the time to adjust (found in /time).
+          operation (str): The type of adjustment to make ("plus2" or "dnf").
+        """
+        await interaction.response.defer(thinking=True)
+        self._log_command_usage("adjust_time")
+        try:
+            user_id = interaction.user.id
+            # Fetch User Internal ID
+            self.bot.db_manager.cursor.execute(
+                "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
+            )
+            db_id = self.bot.db_manager.cursor.fetchval()
+            if not db_id:
+                await interaction.followup.send("History not found.")
+                return
+        except Exception as e:
+            logger.error(f"Adjust time error (fetching user): {e}")
+            await interaction.followup.send("Database connection error. Please try again later.")
+            return
+        
+        try:
+            # Fetch original time and puzzle type
+            self.bot.db_manager.cursor.execute(
+                "SELECT SolveTime, PuzzleType, SolveStatus FROM SolveTimes WHERE TIMEID = ? AND UserID = ?", (timeid, db_id)
+            )
+            result = self.bot.db_manager.cursor.fetchone()
+            if not result:
+                await interaction.followup.send("Time not found or inaccessible.")
+                return
+            
+            original_time = result[0]
+            puzzle_type = result[1]
+            curr_status = result[2]
+            
+            new_time = original_time
+
+            # Perform adjustment
+            if operation == "plus2":
+                if curr_status == "plus2":
+                    await interaction.followup.send("Invalid operation, can't not do another +2")
+                    return
+                new_time = original_time + 2  # Add 2 seconds 
+                status = '+2'
+            elif operation == "dnf":
+                status = 'DNF'
+            else:
+                await interaction.followup.send("Invalid operation.")
+                return
+
+            self.bot.db_manager.cursor.execute(
+                "UPDATE SolveTimes SET SolveTime = ?, SolveStatus = ? WHERE TIMEID = ?", (new_time, status, timeid)
+            )
+            self.bot.db_manager.cursor.commit()
+            
+            # Recalculate PBs after adjustment
+            recalculate_user_pbs(self.bot.db_manager, db_id, puzzle_type)
+
+            msg = f"Successfully adjusted time `{timeid}`: "
+            if operation == "plus2":
+                msg += f"{original_time:.2f}s -> {new_time:.2f}s (+2)"
+            else:
+                msg += f"Marked as DNF"
+            
+            await interaction.followup.send(msg)
+
+        except Exception as e:
+            logger.error(f"Adjust time error: {e}")
+            await interaction.followup.send("Error processing adjustment.")
 
     @app_commands.command(name="help", description="View all available commands")
     async def help(self, interaction: discord.Interaction):

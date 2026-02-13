@@ -12,4 +12,5 @@ src/data/images
 /test
 GEMINI.md
 PLAN.md
-sql_trigger
+.geminiignore
+sql_stuff/
