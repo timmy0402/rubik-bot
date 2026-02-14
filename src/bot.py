@@ -6,6 +6,8 @@ from azure.storage.blob import BlobServiceClient
 import os
 import requests
 import logging
+import datetime
+import asyncio
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +18,7 @@ class RubiksBot(commands.Bot):
     Handles initialization, database management, and background tasks.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.message_content = False
         intents.guilds = True
@@ -26,7 +28,7 @@ class RubiksBot(commands.Bot):
         # Persistent database manager shared across the bot
         self.db_manager = DatabaseManager()
 
-    async def setup_hook(self):
+    async def setup_hook(self) -> None:
         """
         Setup hook called before the bot starts.
         Registers cogs, syncs commands, and starts background loops.
@@ -62,7 +64,11 @@ class RubiksBot(commands.Bot):
             logger.info("Starting updating discordbotlist...")
             self.update_discordbotlist.start()
 
-    async def on_ready(self):
+        if not self.daily_scramble_task.is_running():
+            logger.info("Starting daily scramble task...")
+            self.daily_scramble_task.start()
+
+    async def on_ready(self) -> None:
         """
         Triggered when the bot is fully connected and ready.
         """
@@ -70,17 +76,18 @@ class RubiksBot(commands.Bot):
         # Initialize the shared database connection
         try:
             self.db_manager.connect()
+            await self.check_and_generate_daily_scramble()
         except Exception as e:
             logger.error(f"Failed to initialize database connection: {e}")
 
-    async def on_disconnect(self):
+    async def on_disconnect(self) -> None:
         """
         Cleanup logic when the bot disconnects.
         """
         self.db_manager.close()
 
     @tasks.loop(minutes=5)
-    async def keep_database_alive(self):
+    async def keep_database_alive(self) -> None:
         """
         Background task to prevent Azure SQL from going idle.
         """
@@ -88,7 +95,7 @@ class RubiksBot(commands.Bot):
         self.db_manager.keep_alive()
 
     @tasks.loop(minutes=60)
-    async def get_servers_count(self):
+    async def get_servers_count(self) -> int:
         """
         Get the current number of servers the bot is in.
         """
@@ -111,7 +118,7 @@ class RubiksBot(commands.Bot):
     
     
     @tasks.loop(minutes=60)
-    async def update_topgg(self):
+    async def update_topgg(self) -> None:
         """
         Post bot stats to Top.gg (Production only).
         """
@@ -136,7 +143,7 @@ class RubiksBot(commands.Bot):
             logger.error(f"Error posting to Top.gg: {e}")
 
     @tasks.loop(minutes=60)
-    async def update_discordbotlist(self):
+    async def update_discordbotlist(self) -> None:
         """
         Post bot stats to DiscordBotList (Production only).
         """
@@ -159,3 +166,51 @@ class RubiksBot(commands.Bot):
                 )
         except Exception as e:
             logger.error(f"Error posting to DBL: {e}")
+    
+    async def check_and_generate_daily_scramble(self) -> None:
+        """
+        Checks if a daily scramble exists for the current UTC date.
+        If not, generates one and saves it to the database.
+        """
+        today = datetime.datetime.now(datetime.timezone.utc).date()
+        try:
+            # Check if scramble exists
+            self.db_manager.cursor.execute(
+                "SELECT 1 FROM DailyScramble WHERE ScrambleDate = ?", (today,)
+            )
+            if self.db_manager.cursor.fetchone():
+                logger.info("Daily scramble for today already exists.")
+                return
+
+            logger.info("Generating daily scramble...")
+            puzzle_api_value = "THREE"
+            puzzle_display_name = "3x3"
+            
+            url = "https://scrambler-api-apim.azure-api.net/scrambler-api/GetScramble"
+            params = {"puzzle": puzzle_api_value}
+
+            # Use run_in_executor to avoid blocking the event loop with requests
+            loop = asyncio.get_running_loop()
+            response = await loop.run_in_executor(None, lambda: requests.get(url=url, params=params))
+
+            if response.status_code == 200:
+                response_json = response.json()
+                scramble_string = response_json["scramble"]
+                image_string = response_json["image"]
+                
+                query = "INSERT INTO DailyScramble (ScrambleText, ScrambleDate, PuzzleType, ImageString) VALUES (?, ?, ?, ?)"
+                self.db_manager.cursor.execute(query, (scramble_string, today, puzzle_display_name, image_string))
+                self.db_manager.cursor.commit()
+                logger.info(f"Daily scramble generated: {scramble_string}")
+            else:
+                logger.error(f"Failed to generate daily scramble: {response.status_code} - {response.text}")
+
+        except Exception as e:
+            logger.error(f"Error checking/generating daily scramble: {e}")
+
+    @tasks.loop(time=datetime.time(hour=0, minute=0, tzinfo=datetime.timezone.utc))
+    async def daily_scramble_task(self) -> None:
+        """
+        Generates a daily scramble for 3x3 at 00:00 UTC.
+        """
+        await self.check_and_generate_daily_scramble()

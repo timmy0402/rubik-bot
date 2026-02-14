@@ -5,7 +5,12 @@ import requests
 import base64
 from PIL import Image, ImageEnhance
 import io
-import time
+import datetime
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from bot import RubiksBot
+
 from views.algorithms import AlgorithmsView
 from views.timer import TimerView
 from azure.storage.blob import BlobServiceClient
@@ -24,7 +29,7 @@ class RubiksCommands(commands.Cog):
     Discord Cog containing all Rubik's Cube related commands.
     """
 
-    def __init__(self, bot):
+    def __init__(self, bot: "RubiksBot") -> None:
         self.bot = bot
         account_url = os.getenv("AZURE_STORAGE_ACCOUNT_URL")
         access_key = os.getenv("AZURE_STORAGE_ACCESS_KEY")
@@ -40,7 +45,7 @@ class RubiksCommands(commands.Cog):
 
         super().__init__()
 
-    def _log_command_usage(self, command_name):
+    def _log_command_usage(self, command_name) -> None:
         """
         Logs the usage of a specific command to the database.
         """
@@ -69,7 +74,7 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="clock", value="CLOCK"),
         ]
     )
-    async def scramble(self, interaction: discord.Interaction, puzzle: str):
+    async def scramble(self, interaction: discord.Interaction, puzzle: str) -> None:
         """
         Generates a scramble for the selected puzzle type and displays it with an image.
         """
@@ -140,7 +145,7 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="T Shape", value="T Shape"),
         ]
     )
-    async def oll(self, interaction: discord.Interaction, arg: str = None):
+    async def oll(self, interaction: discord.Interaction, arg: str = None) -> None:
         """
         Displays OLL algorithms in an interactive paginated view.
         """
@@ -177,7 +182,7 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="Edges Only", value="Edges Only"),
         ]
     )
-    async def pll(self, interaction: discord.Interaction, arg: str = None):
+    async def pll(self, interaction: discord.Interaction, arg: str = None) -> None:
         """
         Displays PLL algorithms in an interactive paginated view.
         """
@@ -222,7 +227,7 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="clock", value="CLOCK"),
         ]
     )
-    async def stopwatch(self, interaction: discord.Interaction, arg: str = None):
+    async def stopwatch(self, interaction: discord.Interaction, arg: str = None) -> None:
         """
         Launches an interactive stopwatch for the user to time their solves.
         """
@@ -276,7 +281,7 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="clock", value="CLOCK"),        
         ]
     )
-    async def time(self, interaction: discord.Interaction, puzzle: str = "3x3"):
+    async def time(self, interaction: discord.Interaction, puzzle: str = "3x3") -> None:
         """
         Fetches the last 15 solves from the database and calculates Ao5/Ao12.
         """
@@ -373,7 +378,7 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="clock", value="CLOCK"),
         ]
     )
-    async def personal_bests(self, interaction: discord.Interaction, puzzle: str = "3x3"):
+    async def personal_bests(self, interaction: discord.Interaction, puzzle: str = "3x3") -> None:
         """
         Fetches the user's personal best single, Ao5, and Ao12 for the specified puzzle.
         """
@@ -413,9 +418,109 @@ class RubiksCommands(commands.Cog):
             logger.error(f"Personal bests error: {e}")
             await interaction.followup.send("Database connection error. Please try again later.")
 
+    @app_commands.command(name="daily", description="Start your daily scramble section")
+    async def daily(self, interaction: discord.Interaction) -> None:
+        """
+        Begin users daily sessions with timer and auto record to DailySolves table
+        """
+        await interaction.response.defer(ephemeral=True)
+        self._log_command_usage("daily")
+        # Check if user already did their daily
+        try:
+            user_id = interaction.user.id
+            user = await self.bot.fetch_user(user_id)
+
+            # Fetch User Internal ID
+            self.bot.db_manager.cursor.execute(
+                "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
+            )
+            db_id = self.bot.db_manager.cursor.fetchval()
+
+            self.bot.db_manager.cursor.execute(
+                "SELECT SolveTime, SolveStatus FROM DailySolves WHERE UserID=?", (db_id)
+            )
+            result = self.bot.db_manager.cursor.fetchone()
+            if result:
+                await interaction.followup.send(f"You already did your daily, your time is {result[0]} ({result[1]}). Come back tommorrow please ☺️")
+                return
+        except Exception as e:
+            logger.error(f"Getting userid error: {e}")
+            await interaction.followup.send("Error getting your User profile")
+            return
+        # Fetch Daily Scramble
+        curr_date = datetime.datetime.now(datetime.timezone.utc).date()
+        try:
+            self.bot.db_manager.cursor.execute(
+                "SELECT ScrambleText, ImageString, PuzzleType FROM DailyScramble WHERE ScrambleDate = ?", (curr_date)
+            )
+            response = self.bot.db_manager.cursor.fetchone()
+            if not response:
+                await interaction.followup.send("Daily scramble not generated yet. Come back latter")
+                return
+        except Exception as e:
+            logger.error(f"Fetching daily scramble error: {e}")
+            await interaction.followup.send("Error getting daily scramble")
+            return
+        
+        scramble_string = response[0]
+        svg_string = response[1]
+        puzzle = response[2]
+
+        # Decode base64 image data
+        decode_image = base64.b64decode(svg_string)
+
+        # Load into memory buffer
+        png_buffer = io.BytesIO(decode_image)
+        png_buffer.seek(0)
+
+        # Process image with Pillow (Resize and enhance contrast)
+        with Image.open(png_buffer) as img:
+            resized_img = img.resize((500, 300))
+            enhancer = ImageEnhance.Contrast(resized_img)
+            res = enhancer.enhance(2)
+
+            new_png_buffer = io.BytesIO()
+            res.save(new_png_buffer, format="PNG")
+            new_png_buffer.seek(0)
+
+        # Create Discord file and embed
+        file = discord.File(fp=new_png_buffer, filename="daily_rubiks_cube.png")
+        embed = discord.Embed(
+            title=f"Your {puzzle} Scramble", description=scramble_string, color=0x0099FF
+        )
+        embed.set_image(url="attachment://daily_rubiks_cube.png")
+        try:
+            view = TimerView(
+                timeout=360,
+                is_daily=True,
+                user_id=user_id,
+                userName=user.name,
+                puzzle=puzzle,
+                db_manager=self.bot.db_manager,
+            )
+            await interaction.followup.send(
+                "Click **Start** to begin timing. Click **Stop** when finished.", 
+                view=view,
+                embed=embed,
+                file=file, 
+                ephemeral=True
+            )
+
+            message = await interaction.original_response()
+            view.message = message
+
+            await view.wait()
+            await view.disable_all_items()
+        except Exception as e:
+            logger.error(f"Stopwatch error: {e}")
+            await interaction.followup.send(
+                "An error occurred with the timer. Please try again."
+            )
+        return
+
     @app_commands.command(name="delete_time", description="Delete a specific solve time by ID")
     @app_commands.describe(timeid="The ID of the time to delete (found in /time)")
-    async def deleteTime(self, interaction: discord.Interaction, timeid: str):
+    async def deleteTime(self, interaction: discord.Interaction, timeid: str) -> None:
         """
         Deletes a specific solve time from the user's history.
         """
@@ -467,7 +572,7 @@ class RubiksCommands(commands.Cog):
             app_commands.Choice(name="DNF", value="dnf"),
         ]
     )
-    async def adjust_time(self, interaction: discord.Interaction, timeid: str, operation: str):
+    async def adjust_time(self, interaction: discord.Interaction, timeid: str, operation: str) -> None:
         """Adjusts a specific solve time by either adding 2 seconds or marking it as DNF.
         Args:           
           timeid (str): The ID of the time to adjust (found in /time).
@@ -540,7 +645,7 @@ class RubiksCommands(commands.Cog):
             await interaction.followup.send("Error processing adjustment.")
 
     @app_commands.command(name="help", description="View all available commands")
-    async def help(self, interaction: discord.Interaction):
+    async def help(self, interaction: discord.Interaction) -> None:
         """
         Displays a list of all commands and their descriptions.
         """
@@ -555,13 +660,15 @@ class RubiksCommands(commands.Cog):
         embed.add_field(name="/scramble", value="Generate a scramble for various puzzles", inline=False)
         embed.add_field(name="/stopwatch", value="Interactive timer to record your solves", inline=False)
         embed.add_field(name="/time", value="View your recent times and WCA averages", inline=False)
+        embed.add_field(name="/adjust_time", value="Add 2 seconds penalty or flag as DNF")
         embed.add_field(name="/delete_time", value="Remove an incorrect time record", inline=False)
+        embed.add_field(name="/personal_bests", value="View your personal bests for the specified puzzle", inline=False)
         embed.add_field(name="/oll / /pll", value="Reference library for CFOP algorithms", inline=False)
 
         await interaction.followup.send(embed=embed)
 
     @app_commands.command(name="invite", description="Get the invite link to add the bot to your server")
-    async def invite(self, interaction: discord.Interaction):
+    async def invite(self, interaction: discord.Interaction) -> None:
         """
         Provides an invite link for users to add the bot to their own servers.
         """
