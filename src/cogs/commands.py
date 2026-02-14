@@ -518,6 +518,119 @@ class RubiksCommands(commands.Cog):
             )
         return
 
+    @app_commands.command(name="leaderboard", description="Get daily leaderboard in your server")
+    async def leaderboard(self, interaction: discord.Interaction):
+        """
+        Get daily leaderboard in current server
+        """
+        await interaction.response.defer(thinking=True)
+       # Ensure members are loaded
+        if not interaction.guild.chunked:
+            await interaction.guild.chunk()
+
+        # List comprehension to get all IDs
+        member_ids = [int(member.id) for member in interaction.guild.members]
+
+        if not member_ids:
+            await interaction.followup.send("No members found in this server.")
+            return
+
+        try:
+            placeholders = ",".join("?" * len(member_ids))
+            query = f"SELECT UserID, UserName FROM Users WHERE DiscordID IN ({placeholders})"
+            self.bot.db_manager.cursor.execute(query, *member_ids)
+            results = self.bot.db_manager.cursor.fetchall()
+            
+            if not results:
+                await interaction.followup.send("No users in this server have registered with the bot.")
+                return
+
+            # Initialize a dictionary to map userid to username
+            userid_to_username = {}
+            user_ids = []
+
+            # Loop through the results and create the mapping
+            for row in results:
+                user_id, user_name = row
+                user_ids.append(user_id)
+                userid_to_username[user_id] = user_name
+
+        except Exception as e:
+            logger.error(f"Error getting users list from server: {e}")
+            await interaction.followup.send("Error getting the list of members in server")
+            return
+        
+        try:
+            if not user_ids:
+                await interaction.followup.send("No registered users found.")
+                return
+
+            curr_date = datetime.datetime.now(datetime.timezone.utc).date()
+            placeholders = ",".join("?" * len(user_ids))
+            query = (
+                "SELECT UserID, SolveTime, SolveStatus "
+                "FROM DailySolves "
+                f"WHERE UserID IN ({placeholders}) AND SolveDate = ? "
+                "ORDER BY CASE "
+                "WHEN SolveStatus = 'Completed' OR SolveStatus = '+2' THEN 0 "
+                "WHEN SolveStatus = 'DNF' THEN 1 "
+                "ELSE 2 "
+                "END, SolveTime ASC;"
+            )
+            
+            params = list(user_ids)
+            params.append(curr_date)
+            
+            self.bot.db_manager.cursor.execute(query, *params)
+            results = self.bot.db_manager.cursor.fetchall()
+
+            if not results:
+                await interaction.followup.send("No daily solves found for today.")
+                return
+
+            name_str = "\n".join([str(userid_to_username[row[0]]) for row in results])
+
+            raw_times = []
+            formatted_times_list = []
+            
+            for row in results:
+                t_val = float(row[1])
+                status = row[2] if row[2] else ""
+                
+                # For calculation
+                if status == 'DNF':
+                    raw_times.append(float('inf'))
+                else:
+                    raw_times.append(t_val)
+                    
+                # For display
+                display_str = f"{t_val:.02f}s"
+                if status == 'DNF':
+                    display_str += " (DNF)"
+                elif status == '+2':
+                    display_str += " (+2)"
+                formatted_times_list.append(display_str)
+
+            times_str = "\n".join(formatted_times_list)
+
+            embed = discord.Embed(
+                title=f"{interaction.guild.name}'s Daily Leaderboard",
+                description="Today's solve time leaderboard of the server",
+                color=discord.Color.blue(),
+            )
+            
+            embed.add_field(name="Name", value=name_str, inline=True)
+            embed.add_field(name="Time", value=times_str, inline=True)
+
+            await interaction.followup.send(embed=embed)
+            return
+                
+        except Exception as e:
+            logger.error(f"Error fetching leaderboard: {e}")
+            await interaction.followup.send("Error fetching leaderboard data.")
+            return
+
+
     @app_commands.command(name="delete_time", description="Delete a specific solve time by ID")
     @app_commands.describe(timeid="The ID of the time to delete (found in /time)")
     async def deleteTime(self, interaction: discord.Interaction, timeid: str) -> None:

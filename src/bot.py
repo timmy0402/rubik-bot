@@ -21,6 +21,7 @@ class RubiksBot(commands.Bot):
     def __init__(self) -> None:
         intents = discord.Intents.default()
         intents.message_content = False
+        intents.members = True
         intents.guilds = True
         self.server_count = 0
         super().__init__(command_prefix="/", intents=intents)
