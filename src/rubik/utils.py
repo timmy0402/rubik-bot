@@ -1,18 +1,18 @@
-def rotate_90_counterClockwise(face):
+def rotate_90_counterClockwise(face) -> list:
     # Transpose
     transpose = [[face[row][col] for row in range(len(face))] for col in range(len(face[0]))]
     # Reverse each col
     rotated = transpose[::-1]
     return rotated
 
-def rotate_90_clockwise(face):
+def rotate_90_clockwise(face) -> list:
     # Transpose 
     transpose = [[face[row][col] for row in range(len(face))] for col in range(len(face[0]))]
     # Reverse each row
     rotated = [row[::-1] for row in transpose]
     return rotated
 
-def rotate_face(cube, face, clockwise, extra_layer):
+def rotate_face(cube, face, clockwise, extra_layer) -> None:
     if face == "U":
         # Collect rows to be rotated (for U face, row 0)
         if extra_layer == 0: # For bigger cube

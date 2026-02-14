@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw
 from io import BytesIO
 
 
-def draw_rubiks_cube(rubik):
+def draw_rubiks_cube(rubik) -> BytesIO:
     """
     Generates a 2D net representation of the Rubik's Cube as a PNG image.
 
@@ -48,7 +48,7 @@ def draw_rubiks_cube(rubik):
         "yellow": (block_size * cube_size + gap, block_size * cube_size * 2 + gap * 2),
     }
 
-    def draw_face(face, start_x, start_y):
+    def draw_face(face, start_x, start_y) -> None:
         """
         Draws an individual face on the canvas at the specified coordinates.
         """

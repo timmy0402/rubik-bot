@@ -8,7 +8,7 @@ class Cube:
     Handles the internal state of the cube faces and performs scrambling moves.
     """
 
-    def __init__(self, size=3):
+    def __init__(self, size=3) -> None:
         """
         Initializes the cube with solved faces.
 
@@ -26,7 +26,7 @@ class Cube:
         }
         self.sides = ("F", "D", "U", "R", "L", "B")
 
-    def __createFace(self, color):
+    def __createFace(self, color) -> list[list[str]]:
         """
         Creates a 2D array representing a cube face, initialized with a single color.
 
@@ -38,7 +38,7 @@ class Cube:
         """
         return [[color for _ in range(self.size)] for _ in range(self.size)]
 
-    def scrambleCube(self, scrambleLine: str):
+    def scrambleCube(self, scrambleLine: str) -> None:
         """
         Applies a sequence of scramble moves to the cube.
 

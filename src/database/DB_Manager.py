@@ -33,11 +33,11 @@ class DatabaseManager:
     Handles connection lifecycle, reconnection logic, and keep-alive tasks.
     """
 
-    def __init__(self):
+    def __init__(self) -> None:
         self.connection = None
         self.cursor = None
 
-    def connect(self):
+    def connect(self) -> None:
         """
         Establishes a connection to the Azure SQL Database.
         Includes retry logic and checks for existing active connections.
@@ -71,7 +71,7 @@ class DatabaseManager:
             logger.error("Failed to connect to database after multiple attempts.")
             raise Exception("Unable to connect to the database.")
 
-    def close(self):
+    def close(self) -> None:
         """
         Safely closes the database cursor and connection.
         """
@@ -87,7 +87,7 @@ class DatabaseManager:
             self.cursor = None
             self.connection = None
 
-    def keep_alive(self):
+    def keep_alive(self) -> None:
         """
         Executes a lightweight query to keep the database connection alive.
         Prevents Azure SQL from timing out idle connections.

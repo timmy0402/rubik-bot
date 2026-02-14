@@ -25,7 +25,7 @@ def update_user_pbs(db_manager: DatabaseManager, user_id: int, puzzle_type: str,
         return True
     return False
 
-def calculate_wca_avg(times, count):
+def calculate_wca_avg(times: list[float], count: int) -> float | None:
     """
     Calculates the WCA average (Ao5, Ao12, etc.)
     Args:
@@ -120,7 +120,7 @@ def get_user_pbs(db_manager: DatabaseManager, user_id: int, puzzle_type: str = "
         "BestAo12": float(row[2]) if row[2] is not None else None,
     }
 
-def recalculate_user_pbs(db_manager: DatabaseManager, user_id: int, puzzle_type: str):
+def recalculate_user_pbs(db_manager: DatabaseManager, user_id: int, puzzle_type: str) -> None:
     """
     Recalculates and updates the personal bests (Single, Ao5, Ao12) for a user and puzzle type
     by scanning the entire solve history.
