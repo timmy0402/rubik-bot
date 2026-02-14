@@ -19,7 +19,7 @@ class AlgorithmsView(discord.ui.View):
         initial_group=None,
         blob_service_client=None,
         container=None,
-    ):
+    ) -> None:
         """
         Initialize the AlgorithmsView.
 
@@ -97,7 +97,7 @@ class AlgorithmsView(discord.ui.View):
         if self.current_group:
             self.load_group(self.current_group)
 
-    def setup_select_menu(self):
+    def setup_select_menu(self) -> None:
         """
         Dynamically sets up the select menu options based on the mode (OLL or PLL).
         """
@@ -122,7 +122,7 @@ class AlgorithmsView(discord.ui.View):
         select.callback = self.select_callback
         self.add_item(select)
 
-    async def select_callback(self, interaction: discord.Interaction):
+    async def select_callback(self, interaction: discord.Interaction) -> None:
         """
         Callback for the select menu. Updates the current group and page based on selection.
 
@@ -145,7 +145,7 @@ class AlgorithmsView(discord.ui.View):
         # Update view
         await self.update_view(interaction)
 
-    def load_group(self, group_name):
+    def load_group(self, group_name) -> None:
         """
         Loads the algorithms for the specified group into algorithms_list and fetches images.
 
@@ -194,7 +194,7 @@ class AlgorithmsView(discord.ui.View):
 
         self.current_page = 0
 
-    async def update_view(self, interaction: discord.Interaction):
+    async def update_view(self, interaction: discord.Interaction) -> None:
         """
         Updates the view with the current embed and button states.
 
@@ -223,7 +223,7 @@ class AlgorithmsView(discord.ui.View):
                     embed=embed, view=self, attachments=[]
                 )
 
-    def add_image(self, alg_id, image_data):
+    def add_image(self, alg_id, image_data) -> None:
         """
         Adds an image data (bytes) for a specific algorithm ID.
 
@@ -235,7 +235,7 @@ class AlgorithmsView(discord.ui.View):
             self.images = {}
         self.images[alg_id] = image_data
 
-    def get_embed(self):
+    def get_embed(self) -> tuple[discord.Embed, discord.File | None]:
         """
         Generates the embed for the current algorithm page.
 
@@ -275,7 +275,7 @@ class AlgorithmsView(discord.ui.View):
 
         return embed, file
 
-    def update_buttons(self):
+    def update_buttons(self) -> None:
         """
         Updates the enabled/disabled state of the Back and Next buttons based on current page.
         """
@@ -299,7 +299,7 @@ class AlgorithmsView(discord.ui.View):
             next_button.disabled = self.current_page == len(self.algorithms_list) - 1
 
     @discord.ui.button(label="Back", style=discord.ButtonStyle.secondary, row=1)
-    async def back(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def back(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         """
         Callback for the Back button. Moves to the previous page.
 
@@ -320,7 +320,7 @@ class AlgorithmsView(discord.ui.View):
             await interaction.response.defer()
 
     @discord.ui.button(label="Next", style=discord.ButtonStyle.secondary, row=1)
-    async def next(self, interaction: discord.Interaction, button: discord.ui.Button):
+    async def next(self, interaction: discord.Interaction, button: discord.ui.Button) -> None:
         """
         Callback for the Next button. Moves to the next page.
 
