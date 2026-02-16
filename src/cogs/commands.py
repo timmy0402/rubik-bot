@@ -425,6 +425,8 @@ class RubiksCommands(commands.Cog):
         """
         await interaction.response.defer(ephemeral=True)
         self._log_command_usage("daily")
+        # Fetch Daily Scramble
+        curr_date = datetime.datetime.now(datetime.timezone.utc).date()
         # Check if user already did their daily
         try:
             user_id = interaction.user.id
@@ -437,7 +439,7 @@ class RubiksCommands(commands.Cog):
             db_id = self.bot.db_manager.cursor.fetchval()
 
             self.bot.db_manager.cursor.execute(
-                "SELECT SolveTime, SolveStatus FROM DailySolves WHERE UserID=?", (db_id)
+                "SELECT SolveTime, SolveStatus FROM DailySolves WHERE UserID=? AND SolveDate=?", (db_id,curr_date)
             )
             result = self.bot.db_manager.cursor.fetchone()
             if result:
@@ -447,8 +449,6 @@ class RubiksCommands(commands.Cog):
             logger.error(f"Getting userid error: {e}")
             await interaction.followup.send("Error getting your User profile")
             return
-        # Fetch Daily Scramble
-        curr_date = datetime.datetime.now(datetime.timezone.utc).date()
         try:
             self.bot.db_manager.cursor.execute(
                 "SELECT ScrambleText, ImageString, PuzzleType FROM DailyScramble WHERE ScrambleDate = ?", (curr_date)
