@@ -733,6 +733,8 @@ class RubiksCommands(commands.Cog):
         embed.add_field(name="/delete_time", value="Remove an incorrect time record", inline=False)
         embed.add_field(name="/personal_bests", value="View your personal bests for the specified puzzle", inline=False)
         embed.add_field(name="/oll / /pll", value="Reference library for CFOP algorithms", inline=False)
+        embed.add_field(name="/daily", value="Start your daily section with timer", inline=False)
+        embed.add_field(name="/leaderboard", value="Get your server daily leaderboard", inline=False)
 
         await interaction.followup.send(embed=embed)
 

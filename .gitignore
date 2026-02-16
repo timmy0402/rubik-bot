@@ -1,5 +1,4 @@
 .env
-test.py
 __pycache__/
 *.pdf
 testCommand.txt
@@ -9,7 +8,6 @@ CommandsRegister/
 cube/
 /venv
 src/data/images
-/test
 GEMINI.md
 CLAUDE.md
 PLAN.md
