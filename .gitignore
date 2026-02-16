@@ -11,6 +11,8 @@ cube/
 src/data/images
 /test
 GEMINI.md
+CLAUDE.md
 PLAN.md
+implementation_plan.md
 .geminiignore
 sql_stuff/

@@ -1,7 +1,7 @@
 import discord
 from discord.ext import commands
 from discord import app_commands
-import requests
+import aiohttp
 import base64
 from PIL import Image, ImageEnhance
 import io
@@ -22,6 +22,20 @@ import logging
 load_dotenv()
 
 logger = logging.getLogger(__name__)
+
+PUZZLE_CHOICES = [
+    app_commands.Choice(name="2x2", value="2x2"),
+    app_commands.Choice(name="3x3", value="3x3"),
+    app_commands.Choice(name="4x4", value="4x4"),
+    app_commands.Choice(name="5x5", value="5x5"),
+    app_commands.Choice(name="6x6", value="6x6"),
+    app_commands.Choice(name="7x7", value="7x7"),
+    app_commands.Choice(name="pyraminx", value="PYRA"),
+    app_commands.Choice(name="square1", value="SQ1"),
+    app_commands.Choice(name="megaminx", value="MEGA"),
+    app_commands.Choice(name="skewb", value="SKEWB"),
+    app_commands.Choice(name="clock", value="CLOCK"),
+]
 
 
 class RubiksCommands(commands.Cog):
@@ -57,6 +71,38 @@ class RubiksCommands(commands.Cog):
         except Exception as e:
             logger.error(f"Log usage failed: {e}")
 
+    def _get_db_user_id(self, discord_id: int) -> int | None:
+        """
+        Fetches the internal database UserID for a given Discord user ID.
+
+        Input: discord_id (int) - The Discord user's ID.
+        Output: int | None - The internal UserID, or None if not found.
+        """
+        self.bot.db_manager.cursor.execute(
+            "SELECT UserID FROM Users WHERE DiscordID = ?", (discord_id,)
+        )
+        return self.bot.db_manager.cursor.fetchval()
+
+    def _process_scramble_image(self, b64_string: str) -> io.BytesIO:
+        """
+        Decodes a base64-encoded image, resizes it, and enhances contrast.
+
+        Input: b64_string (str) - Base64-encoded image data.
+        Output: io.BytesIO - A PNG image buffer ready for Discord upload.
+        """
+        decoded = base64.b64decode(b64_string)
+        png_buffer = io.BytesIO(decoded)
+        png_buffer.seek(0)
+
+        with Image.open(png_buffer) as img:
+            resized = img.resize((500, 300))
+            enhanced = ImageEnhance.Contrast(resized).enhance(2)
+
+            out_buffer = io.BytesIO()
+            enhanced.save(out_buffer, format="PNG")
+            out_buffer.seek(0)
+            return out_buffer
+
     @app_commands.command(name="scramble", description="Generate a Rubik's Cube scramble")
     @app_commands.describe(puzzle="Choose the scramble type")
     @app_commands.choices(
@@ -90,33 +136,19 @@ class RubiksCommands(commands.Cog):
             url = "https://scrambler-api-apim.azure-api.net/scrambler-api/GetScramble"
             params = {"puzzle": puzzle}
 
-            response = requests.get(url=url, params=params)
-            
-            if response.status_code != 200:
-                await interaction.followup.send("Failed to retrieve scramble. Please try again later.")
-                logger.error(f"Scrambler API error: {response.status_code} - {response.text}")
-                return
-                
-            response_json = response.json()
+            async with aiohttp.ClientSession() as session:
+                async with session.get(url, params=params) as response:
+                    if response.status != 200:
+                        await interaction.followup.send("Failed to retrieve scramble. Please try again later.")
+                        logger.error(f"Scrambler API error: {response.status} - {await response.text()}")
+                        return
+
+                    response_json = await response.json()
+
             scramble_string = response_json["scramble"]
             svg_string = response_json["image"]
 
-            # Decode base64 image data
-            decode_image = base64.b64decode(svg_string)
-
-            # Load into memory buffer
-            png_buffer = io.BytesIO(decode_image)
-            png_buffer.seek(0)
-
-            # Process image with Pillow (Resize and enhance contrast)
-            with Image.open(png_buffer) as img:
-                resized_img = img.resize((500, 300))
-                enhancer = ImageEnhance.Contrast(resized_img)
-                res = enhancer.enhance(2)
-
-                new_png_buffer = io.BytesIO()
-                res.save(new_png_buffer, format="PNG")
-                new_png_buffer.seek(0)
+            new_png_buffer = self._process_scramble_image(svg_string)
 
             # Create Discord file and embed
             file = discord.File(fp=new_png_buffer, filename="rubiks_cube.png")
@@ -212,21 +244,7 @@ class RubiksCommands(commands.Cog):
 
     @app_commands.command(name="stopwatch", description="Time your own solve with an interactive timer")
     @app_commands.describe(arg="Optional: Choose your Puzzle: 3x3, 4x4, etc.")
-    @app_commands.choices(
-        arg=[
-            app_commands.Choice(name="2x2", value="2x2"),
-            app_commands.Choice(name="3x3", value="3x3"),
-            app_commands.Choice(name="4x4", value="4x4"),
-            app_commands.Choice(name="5x5", value="5x5"),
-            app_commands.Choice(name="6x6", value="6x6"),
-            app_commands.Choice(name="7x7", value="7x7"),
-            app_commands.Choice(name="pyraminx", value="PYRA"),
-            app_commands.Choice(name="square1", value="SQ1"),
-            app_commands.Choice(name="megaminx", value="MEGA"),
-            app_commands.Choice(name="skewb", value="SKEWB"),
-            app_commands.Choice(name="clock", value="CLOCK"),
-        ]
-    )
+    @app_commands.choices(arg=PUZZLE_CHOICES)
     async def stopwatch(self, interaction: discord.Interaction, arg: str = None) -> None:
         """
         Launches an interactive stopwatch for the user to time their solves.
@@ -266,38 +284,20 @@ class RubiksCommands(commands.Cog):
 
     @app_commands.command(name="time", description="Display your recent solve times and averages")
     @app_commands.describe(puzzle="Optional: Filter by puzzle type (3x3, 4x4, etc.)")
-    @app_commands.choices(
-        puzzle=[
-            app_commands.Choice(name="2x2", value="2x2"),
-            app_commands.Choice(name="3x3", value="3x3"),
-            app_commands.Choice(name="4x4", value="4x4"),
-            app_commands.Choice(name="5x5", value="5x5"),
-            app_commands.Choice(name="6x6", value="6x6"),
-            app_commands.Choice(name="7x7", value="7x7"),
-            app_commands.Choice(name="pyraminx", value="PYRA"),
-            app_commands.Choice(name="square1", value="SQ1"),
-            app_commands.Choice(name="megaminx", value="MEGA"),
-            app_commands.Choice(name="skewb", value="SKEWB"),
-            app_commands.Choice(name="clock", value="CLOCK"),        
-        ]
-    )
+    @app_commands.choices(puzzle=PUZZLE_CHOICES)
     async def time(self, interaction: discord.Interaction, puzzle: str = "3x3") -> None:
         """
         Fetches the last 15 solves from the database and calculates Ao5/Ao12.
         """
         await interaction.response.defer(thinking=True)
         self._log_command_usage("time")
-        
+
         try:
             user_id = interaction.user.id
             user = await self.bot.fetch_user(user_id)
-            
-            # Fetch User Internal ID
-            self.bot.db_manager.cursor.execute(
-                "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
-            )
-            db_id = self.bot.db_manager.cursor.fetchval()
-            
+
+            db_id = self._get_db_user_id(user_id)
+
             if not db_id:
                 await interaction.followup.send("You haven't recorded any solves yet!")
                 return
@@ -363,21 +363,7 @@ class RubiksCommands(commands.Cog):
 
     @app_commands.command(name="personal_bests", description="View your personal best times for each puzzle")
     @app_commands.describe(puzzle="Optional: Filter by puzzle type (3x3, 4x4, etc.)")
-    @app_commands.choices(
-        puzzle=[
-            app_commands.Choice(name="2x2", value="2x2"),
-            app_commands.Choice(name="3x3", value="3x3"),
-            app_commands.Choice(name="4x4", value="4x4"),
-            app_commands.Choice(name="5x5", value="5x5"),
-            app_commands.Choice(name="6x6", value="6x6"),
-            app_commands.Choice(name="7x7", value="7x7"),
-            app_commands.Choice(name="pyraminx", value="PYRA"),
-            app_commands.Choice(name="square1", value="SQ1"),
-            app_commands.Choice(name="megaminx", value="MEGA"),
-            app_commands.Choice(name="skewb", value="SKEWB"),
-            app_commands.Choice(name="clock", value="CLOCK"),
-        ]
-    )
+    @app_commands.choices(puzzle=PUZZLE_CHOICES)
     async def personal_bests(self, interaction: discord.Interaction, puzzle: str = "3x3") -> None:
         """
         Fetches the user's personal best single, Ao5, and Ao12 for the specified puzzle.
@@ -389,11 +375,7 @@ class RubiksCommands(commands.Cog):
             user_id = interaction.user.id
             user = await self.bot.fetch_user(user_id)
 
-            # Fetch User Internal ID
-            self.bot.db_manager.cursor.execute(
-                "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
-            )
-            db_id = self.bot.db_manager.cursor.fetchval()
+            db_id = self._get_db_user_id(user_id)
 
             if not db_id:
                 await interaction.followup.send("You haven't recorded any solves yet!")
@@ -432,11 +414,7 @@ class RubiksCommands(commands.Cog):
             user_id = interaction.user.id
             user = await self.bot.fetch_user(user_id)
 
-            # Fetch User Internal ID
-            self.bot.db_manager.cursor.execute(
-                "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
-            )
-            db_id = self.bot.db_manager.cursor.fetchval()
+            db_id = self._get_db_user_id(user_id)
 
             self.bot.db_manager.cursor.execute(
                 "SELECT SolveTime, SolveStatus FROM DailySolves WHERE UserID=? AND SolveDate=?", (db_id,curr_date)
@@ -461,27 +439,12 @@ class RubiksCommands(commands.Cog):
             logger.error(f"Fetching daily scramble error: {e}")
             await interaction.followup.send("Error getting daily scramble")
             return
-        
+
         scramble_string = response[0]
         svg_string = response[1]
         puzzle = response[2]
 
-        # Decode base64 image data
-        decode_image = base64.b64decode(svg_string)
-
-        # Load into memory buffer
-        png_buffer = io.BytesIO(decode_image)
-        png_buffer.seek(0)
-
-        # Process image with Pillow (Resize and enhance contrast)
-        with Image.open(png_buffer) as img:
-            resized_img = img.resize((500, 300))
-            enhancer = ImageEnhance.Contrast(resized_img)
-            res = enhancer.enhance(2)
-
-            new_png_buffer = io.BytesIO()
-            res.save(new_png_buffer, format="PNG")
-            new_png_buffer.seek(0)
+        new_png_buffer = self._process_scramble_image(svg_string)
 
         # Create Discord file and embed
         file = discord.File(fp=new_png_buffer, filename="daily_rubiks_cube.png")
@@ -642,10 +605,7 @@ class RubiksCommands(commands.Cog):
         
         try:
             user_id = interaction.user.id
-            self.bot.db_manager.cursor.execute(
-                "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
-            )
-            db_id = self.bot.db_manager.cursor.fetchval()
+            db_id = self._get_db_user_id(user_id)
 
             if not db_id:
                 await interaction.followup.send("History not found.")
@@ -695,11 +655,7 @@ class RubiksCommands(commands.Cog):
         self._log_command_usage("adjust_time")
         try:
             user_id = interaction.user.id
-            # Fetch User Internal ID
-            self.bot.db_manager.cursor.execute(
-                "SELECT UserID FROM Users WHERE DiscordID = ?", (user_id,)
-            )
-            db_id = self.bot.db_manager.cursor.fetchval()
+            db_id = self._get_db_user_id(user_id)
             if not db_id:
                 await interaction.followup.send("History not found.")
                 return
