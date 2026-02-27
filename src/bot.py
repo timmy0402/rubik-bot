@@ -65,6 +65,10 @@ class RubiksBot(commands.Bot):
             logger.info("Starting updating discordbotlist...")
             self.update_discordbotlist.start()
 
+        if not self.get_servers_count.is_running():
+            logger.info("Starting get servers count task...")
+            self.get_servers_count.start()
+
         if not self.daily_scramble_task.is_running():
             logger.info("Starting daily scramble task...")
             self.daily_scramble_task.start()
