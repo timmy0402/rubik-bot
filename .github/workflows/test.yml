@@ -24,4 +24,13 @@ jobs:
           pip install pytest
 
       - name: Run tests
+        env:
+          DEV_SQL_HOST: "localhost"
+          DEV_SQL_DATABASE: "testdb"
+          DEV_SQL_USERNAME: "testuser"
+          DEV_SQL_PASSWORD: "testpass"
+          AZURE_STORAGE_ACCOUNT_URL: ""
+          AZURE_STORAGE_ACCESS_KEY: ""
+          AZURE_STORAGE_CONTAINER_NAME: ""
+          APPLICATION_ID: "000000000000000000"
         run: pytest test/ -v

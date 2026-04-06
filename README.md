@@ -19,6 +19,7 @@
 - **WCA Averages:** Automatically calculates **Average of 5 (Ao5)** and **Average of 12 (Ao12)** according to WCA standards (removing best/worst solves).
 - **Per-Puzzle Tracking:** Keeps your history organized by puzzle type with a 15-entry limit per puzzle to keep your data relevant.
 - **Algorithm Library:** Access OLL and PLL algorithm guides with visual aids.
+- **Daily Competition:** Compete with friends in your sever with unique daily scramble.
 
 ---
 
@@ -33,6 +34,8 @@ Commands
 | `/delete_time [id]` | Removes a specific solve from your history using its TimeID. |
 | `/oll [group]` | View OLL algorithms with visual guides and pagination. |
 | `/pll [group]` | View PLL algorithms with visual guides and pagination. |
+| `/daily` | View the daily scramble with timer. |
+| `/leaderboard` | View the ranking of daily solve in current server. |
 | `/invite` | Generates invite link. |
 
 ---
