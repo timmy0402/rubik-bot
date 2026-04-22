@@ -3,7 +3,7 @@ version: '3.8'
 services:
   bot:
     build: .
-    container_name: rubik-bot
+    container_name: cube-crafter
     restart: unless-stopped
     env_file:
       - src/.env

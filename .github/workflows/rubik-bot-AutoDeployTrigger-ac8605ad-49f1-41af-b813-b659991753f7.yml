@@ -1,14 +1,11 @@
 name: Trigger auto deployment for rubik-bot
 
 # When this action will be executed
-on:
-  # Automatically trigger it when detected changes in repo
-  push:
-    branches: 
-      [ main ]
-    paths:
-    - '**'
-    - '.github/workflows/rubik-bot-AutoDeployTrigger-ac8605ad-49f1-41af-b813-b659991753f7.yml'
+  on:                                                                                                                                                    
+    workflow_run:                                                                                                                                        
+      workflows: ["Run Tests"]                                                                                                                           
+      types: [completed]                                                                                                                                 
+      branches: [main] 
 
   # Allow manual trigger 
   workflow_dispatch:      
@@ -42,7 +39,7 @@ jobs:
           registryPassword: ${{ secrets.RUBIKBOT_REGISTRY_PASSWORD }}
           containerAppName: rubik-bot
           resourceGroup: rubik_bot
-          imageToBuild: timhmn/rubik-bot:${{ github.sha }}
+          imageToBuild: timhmn/cube-crafter:${{ github.sha }}
           _buildArgumentsKey_: |
             _buildArgumentsValues_
 
