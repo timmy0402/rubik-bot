@@ -8,6 +8,7 @@ import requests
 import logging
 import datetime
 import asyncio
+import itertools
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +24,7 @@ class RubiksBot(commands.Bot):
         intents.message_content = False
         intents.members = True
         intents.guilds = True
+        self.status_index = 0
         self.server_count = 0
         super().__init__(command_prefix="/", intents=intents)
 
@@ -72,12 +74,15 @@ class RubiksBot(commands.Bot):
         if not self.daily_scramble_task.is_running():
             logger.info("Starting daily scramble task...")
             self.daily_scramble_task.start()
-
+        
     async def on_ready(self) -> None:
         """
         Triggered when the bot is fully connected and ready.
         """
         logger.info(f"We have logged as an {self.user}")
+        if not self.rotate_status.is_running():
+            logger.info("Starting roatate statuses")
+            self.rotate_status.start()
         # Initialize the shared database connection
         try:
             self.db_manager.connect()
@@ -98,6 +103,23 @@ class RubiksBot(commands.Bot):
         """
         logger.debug("Executing keep-alive query...")
         self.db_manager.keep_alive()
+    
+    @tasks.loop(minutes=15)
+    async def rotate_status(self) -> None:
+        statuses = [
+            discord.Activity(type=discord.ActivityType.watching, name=f"/scramble for {self.server_count} servers"),
+            discord.Activity(type=discord.ActivityType.competing, name="Competing in /daily"),
+            discord.Activity(type=discord.ActivityType.watching, name="Begging for review on https://top.gg/bot/1197268536918278236")
+        ]
+        await self.change_presence(activity=statuses[self.status_index % len(statuses)])
+        self.status_index = (self.status_index + 1) % len(statuses)
+
+    @rotate_status.before_loop
+    async def before_rotate_status(self):
+        """
+        Wait for full sync
+        """
+        await self.wait_until_ready()
 
     @tasks.loop(minutes=60)
     async def get_servers_count(self) -> int:

@@ -14,7 +14,7 @@ if TYPE_CHECKING:
 from views.algorithms import AlgorithmsView
 from views.timer import TimerView
 from azure.storage.blob import BlobServiceClient
-from stats import update_user_pbs, update_user_average_best, get_user_pbs, calculate_wca_avg, recalculate_user_pbs
+from stats import get_user_pbs, calculate_wca_avg, recalculate_user_pbs
 import os
 from dotenv import load_dotenv
 import logging

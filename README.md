@@ -6,7 +6,7 @@
 
 **Cube Crafter** is a high-performance Discord bot designed for the cubing community. It provides official WCA scrambles, visual cube representations, and a robust personal timing system directly within your Discord server.
 
-[**Visit Official Website**](https://cubecrafter.azurewebsites.net/) | [**Invite Bot**](https://discord.com/api/oauth2/authorize?client_id=1197268536918278236&permissions=2147483648&scope=bot%20applications.commands)
+[**Visit Official Website**](https://cube-crafter-site.vercel.app/) | [**Invite Bot**](https://discord.com/api/oauth2/authorize?client_id=1197268536918278236&permissions=2147483648&scope=bot%20applications.commands)
 
 ---
 
@@ -40,6 +40,81 @@ Commands
 
 ---
 
+## Running Locally
+
+These instructions cover running the bot on your own machine against a local SQL Server database.
+
+### 1. Prerequisites
+
+- **Python 3.12** (a conda environment named `rubik_bot_env` is recommended)
+- **SQL Server** (Express edition works) running locally
+- **Microsoft ODBC Driver 18 for SQL Server**
+- A **Discord bot** created at the [Discord Developer Portal](https://discord.com/developers/applications) — note the bot token and application ID
+
+### 2. Install dependencies
+
+```bash
+conda activate rubik_bot_env
+pip install -r requirements.txt
+```
+
+### 3. Set up the local database
+
+Create a database (e.g. `CubeCrafter`) on your local SQL Server instance, then create the tables and triggers by running every script in `sql_tables/` followed by every script in `sql_trigger/`.
+
+Using `sqlcmd`:
+
+```bash
+sqlcmd -S localhost -d CubeCrafter -E -i sql_tables/Users.sql
+sqlcmd -S localhost -d CubeCrafter -E -i sql_tables/SolveTimes.sql
+sqlcmd -S localhost -d CubeCrafter -E -i sql_tables/UserStats.sql
+sqlcmd -S localhost -d CubeCrafter -E -i sql_tables/DailyScramble.sql
+sqlcmd -S localhost -d CubeCrafter -E -i sql_tables/DailySolves.sql
+sqlcmd -S localhost -d CubeCrafter -E -i sql_tables/DuelMatches.sql
+sqlcmd -S localhost -d CubeCrafter -E -i sql_tables/CommandLog.sql
+sqlcmd -S localhost -d CubeCrafter -E -i sql_tables/CommandTrack.sql
+
+sqlcmd -S localhost -d CubeCrafter -E -i sql_trigger/trg_AutoDeleteOldSolveTimes.sql
+sqlcmd -S localhost -d CubeCrafter -E -i sql_trigger/trg_IncreaseCommandCount.sql
+```
+
+Or open each `.sql` file in SQL Server Management Studio and execute them against your database.
+
+### 4. Configure environment variables
+
+Create `src/.env` with the following values:
+
+```dotenv
+ENV=development
+
+# Discord
+TEST_TOKEN=your-discord-bot-token
+APPLICATION_ID=your-discord-application-id
+GUILD_ID=your-test-guild-id
+
+# Local SQL Server
+DEV_SQL_HOST=localhost
+DEV_SQL_DATABASE=CubeCrafter
+DEV_SQL_USERNAME=your-sql-user
+DEV_SQL_PASSWORD=your-sql-password
+```
+
+In development mode, slash commands are synced to `GUILD_ID` for instant updates.
+
+### 5. Run the bot
+
+```bash
+python src/main.py
+```
+
+### Run tests
+
+```bash
+python -m pytest test/cube_test.py
+```
+
+---
+
 ##  Technical Stack
 
 - **Language:** Python 3.12 (`discord.py`)
@@ -51,7 +126,6 @@ Commands
 
 ## 📊 Bot Stats
 
-[![](https://discordbotlist.com/api/v1/bots/1197268536918278236/widget)](https://discordbotlist.com/bots/cube-crafter)
 ![Discord Bots](https://top.gg/api/widget/1197268536918278236.svg)
 ---
 © 2024 Cube Crafter. All rights reserved.
