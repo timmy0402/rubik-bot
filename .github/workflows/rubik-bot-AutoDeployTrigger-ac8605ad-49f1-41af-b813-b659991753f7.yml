@@ -1,11 +1,11 @@
 name: Trigger auto deployment for rubik-bot
 
 # When this action will be executed
-  on:                                                                                                                                                    
-    workflow_run:                                                                                                                                        
-      workflows: ["Run Tests"]                                                                                                                           
-      types: [completed]                                                                                                                                 
-      branches: [main] 
+on:                                                                                                                                                    
+  workflow_run:                                                                                                                                        
+    workflows: ["Run Tests"]                                                                                                                           
+    types: [completed]                                                                                                                                 
+    branches: [main] 
 
   # Allow manual trigger 
   workflow_dispatch:      
