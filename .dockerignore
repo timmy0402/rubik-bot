@@ -1,21 +1,34 @@
+# Secrets
+.env
+*.env
+src/.env
+src/.env.*
+
+# Python
 __pycache__
-*.pdf
-*.md
-./src/cube.py
-./src/draw.py
+*.pyc
+venv
+.pytest_cache
+
+# VCS
 .git
 .github
 .gitignore
-venv
-cube
-test
-Dockerfile
-./src/data/images
-./src/scripts
-./src/tests
-/test
-src/CommandsRegister
-GEMINI.md
-PLAN.md
-sql_trigger
+
+# Docs
+*.md
+*.pdf
 docs
+
+# Tests
+test
+
+# SQL helper scripts
+sql_trigger
+
+# Build/editor metadata
+Dockerfile
+.dockerignore
+.vscode
+.idea
+*.log

@@ -10,8 +10,6 @@ WORKDIR /app
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
-    curl \
-    gnupg2 \
     unixodbc-dev \
     pkg-config \
     libcairo2-dev \
@@ -45,6 +43,7 @@ RUN apt-get update && \
     apt-get update && \
     env ACCEPT_EULA=Y apt-get install -y msodbcsql18 && \
     # Cleanup to keep layer size down
+    apt-get purge -y curl gnupg2 && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 

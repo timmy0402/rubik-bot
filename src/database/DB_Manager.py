@@ -7,6 +7,10 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+def _odbc_escape(value: str) -> str:
+    # ODBC quotes values containing ;=space with {...}; any } inside must be doubled.
+    return "{" + value.replace("}", "}}") + "}"
+
 # Load database environment variables from .env file
 load_dotenv(SRC_DIR / ".env")
 if(os.getenv("ENV", "").upper() == "PROD"):
@@ -14,7 +18,7 @@ if(os.getenv("ENV", "").upper() == "PROD"):
     server = os.getenv("AZURE_SQL_HOST")
     database = os.getenv("AZURE_SQL_DATABASE")
     username = os.getenv("AZURE_SQL_USERNAME")
-    password = os.getenv("AZURE_SQL_PASSWORD")
+    password = _odbc_escape(os.getenv("AZURE_SQL_PASSWORD"))
     driver = "{ODBC Driver 18 for SQL Server}"
     trust = "no"
 else:
@@ -22,8 +26,7 @@ else:
     server = os.getenv("DEV_SQL_HOST")
     database = os.getenv("DEV_SQL_DATABASE")
     username = os.getenv("DEV_SQL_USERNAME")
-    password = os.getenv("DEV_SQL_PASSWORD")
-    password = "{" + password + "}"
+    password = _odbc_escape(os.getenv("DEV_SQL_PASSWORD"))
     driver = "{ODBC Driver 18 for SQL Server}"
     trust = "yes"
 
